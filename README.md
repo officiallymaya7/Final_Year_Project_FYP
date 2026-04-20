@@ -37,9 +37,11 @@ Laiba Danish: Backend Engineer
 🚀 Getting Started
 Clone the Repo:
 
+
 Bash
 git clone https://github.com/officiallymaya7/Final_Year_Project_FYP.git
 Install Dependencies:
+
 
 Bash
 npm install
