@@ -34,22 +34,25 @@ Imsha Anmol: UI/UX Designer
 
 Laiba Danish: Backend Engineer
 
-🚀 Getting Started
-Clone the Repo:
+## 🚀 Getting Started
 
-
-Bash
-git clone https://github.com/officiallymaya7/Final_Year_Project_FYP.git
+1. **Clone the Repo**:
+   ```bash
+   git clone https://github.com/officiallymaya7/Final_Year_Project_FYP.git
 Install Dependencies:
-
 
 Bash
 npm install
 Configuration:
-Create a .env file in the root and add your Supabase credentials (ensure this file is ignored by Git):
+Create a .env file in the root and add your Supabase credentials:
 
 Code snippet
 VITE_SUPABASE_URL=your_project_url
+VITE_SUPABASE_ANON_KEY=your_anon_key
+Run Locally:
+
+Bash
+npm run devect_url
 VITE_SUPABASE_ANON_KEY=your_anon_key
 Run Locally:
 
