@@ -42,24 +42,31 @@ Follow these steps to set up the project locally on your machine:
    Copy the project to your local system using:
    ```bash
    git clone [https://github.com/officiallymaya7/Final_Year_Project_FYP.git](https://github.com/officiallymaya7/Final_Year_Project_FYP.git)
-Navigate to Project Directory
+## 🚀 Project Setup Guide
+
+Follow the steps below to run the project locally.
+
+---
+
+### 📁 1. Navigate to Project Directory
+
 Go into the project folder:
 
-Bash
+```bash
 cd Final_Year_Project_FYP
-Install Dependencies
+📦 2. Install Dependencies
+
 Install all the required packages using npm:
 
-Bash
 npm install
-Environment Setup
+🔐 3. Environment Setup
+
 Create a .env file in the root directory and add your Supabase credentials:
 
-Code snippet
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-Run the Application
+▶️ 4. Run the Application
+
 Start the development server:
 
-Bash
 npm run dev
