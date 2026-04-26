@@ -25,15 +25,18 @@ export interface Participant {
 
 interface Props {
   title: string;
+  onTitleChange?: (newTitle: string) => void; // Ye add karen
+  editableTitle?: boolean; // Ye add karen
   participants: Participant[];
   onUpdate: (participants: Participant[]) => void;
   isTechEvent: boolean;
   isCustomEvent?: boolean;
 }
 
-const ParticipantTable = ({ title, participants, onUpdate, isTechEvent, isCustomEvent }: Props) => {
+const ParticipantTable = ({ title, onTitleChange, editableTitle, participants, onUpdate, isTechEvent, isCustomEvent }: Props) => {
   const [showAdd, setShowAdd] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+  const [isEditingTitle, setIsEditingTitle] = useState(false); // State for title editing
   const [form, setForm] = useState({ name: "", email: "", phone: "", organization: "" });
 
   const resetForm = () => setForm({ name: "", email: "", phone: "", organization: "" });
@@ -127,7 +130,28 @@ const ParticipantTable = ({ title, participants, onUpdate, isTechEvent, isCustom
       <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-border">
         <div className="flex items-center gap-3">
           <Users className="w-5 h-5 text-primary" />
-          <h3 className="font-semibold text-foreground">{title}</h3>
+          
+          {/* Editable Title Logic */}
+          {isEditingTitle ? (
+            <input
+            aria-label="Edit title"
+            className="bg-transparent border-b border-primary font-semibold text-foreground outline-none px-1"
+            value={title}
+            onChange={(e) => onTitleChange?.(e.target.value)}
+            onBlur={() => setIsEditingTitle(false)}
+            onKeyDown={(e) => e.key === "Enter" && setIsEditingTitle(false)}
+            autoFocus
+            />
+          ) : (
+            <div
+              className="flex items-center gap-2 group cursor-pointer" 
+              onClick={() => setIsEditingTitle(true)}
+            >
+              <h3 className="font-semibold text-foreground">{title}</h3>
+              <Pencil size={14} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+          )}
+
           <Badge variant="secondary" className="bg-accent text-accent-foreground">
             {participants.length}
           </Badge>
@@ -168,7 +192,7 @@ const ParticipantTable = ({ title, participants, onUpdate, isTechEvent, isCustom
         </div>
       </div>
 
-      {/* Table */}
+      {/* Table Content */}
       {participants.length > 0 ? (
         <Table>
           <TableHeader>

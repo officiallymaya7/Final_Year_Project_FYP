@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { CalendarDays, Users, BarChart3, ArrowLeft } from "lucide-react";
+import { CalendarDays, Users, BarChart3, ArrowLeft, Pencil } from "lucide-react";
 import DashboardSidebar, { type EventType } from "@/components/DashboardSidebar";
 import DashboardHeader from "@/components/DashboardHeader";
 import EventCreationForm, { type EventFormData } from "@/components/EventCreationForm";
@@ -39,8 +39,8 @@ const Index = () => {
   const [events, setEvents] = useState<DashboardEvent[]>(sampleEvents);
   const [selectedEvent, setSelectedEvent] = useState<DashboardEvent | null>(null);
   const [view, setView] = useState<View>("overview");
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
 
-  // --- Dynamic User Logic ---
   const [userName, setUserName] = useState("Organizer");
 
   useEffect(() => {
@@ -52,8 +52,16 @@ const Index = () => {
   }, []);
 
   const userInitial = userName.charAt(0).toUpperCase();
-
   const filteredEvents = events.filter((e) => e.type === activeType);
+
+  const handleUpdateEventName = (newName: string) => {
+    if (!selectedEvent) return;
+    const updatedEvents = events.map((e) => 
+      e.id === selectedEvent.id ? { ...e, name: newName } : e
+    );
+    setEvents(updatedEvents);
+    setSelectedEvent({ ...selectedEvent, name: newName });
+  };
 
   const handleCreate = (data: EventFormData) => {
     const newEvent: DashboardEvent = { ...data, id: crypto.randomUUID() };
@@ -79,11 +87,8 @@ const Index = () => {
   };
 
   const handleCreateEvent = () => {
-    if (activeType === "others") {
-      setShowCustomCreate(true);
-    } else {
-      setShowCreate(true);
-    }
+    if (activeType === "others") setShowCustomCreate(true);
+    else setShowCreate(true);
   };
 
   const handleSelectEvent = (event: DashboardEvent) => {
@@ -111,22 +116,18 @@ const Index = () => {
         <main className="flex-1 p-6 overflow-auto">
           {view === "overview" && (
             <div className="space-y-6 max-w-6xl">
-              {/* Dynamic Welcome Section - REPLACED STATIC CONTENT */}
               <div className="bg-card border border-border/50 rounded-2xl p-8 mb-6 shadow-sm flex items-center gap-6">
                 <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-primary/20">
                   {userInitial}
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-foreground">
-                    Welcome Back, {userName}! 👋
-                  </h1>
+                  <h1 className="text-3xl font-bold text-foreground">Welcome Back, {userName}! 👋</h1>
                   <p className="text-muted-foreground mt-1 text-lg">
                     {activeType === "tech" ? "Tech Events" : activeType === "party" ? "Party Events" : activeType === "wedding" ? "Weddings" : activeType === "birthday" ? "Birthday Parties" : "Other Events"} Overview
                   </p>
                 </div>
               </div>
 
-              {/* Stats */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {stats.map((s) => (
                   <div key={s.label} className="bg-card border border-border rounded-xl p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
@@ -141,7 +142,6 @@ const Index = () => {
                 ))}
               </div>
 
-              {/* Event List */}
               <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
                 <div className="p-4 border-b border-border bg-muted/20">
                   <h2 className="font-semibold text-foreground">Active Events</h2>
@@ -179,7 +179,28 @@ const Index = () => {
                   <ArrowLeft className="w-3 h-3" /> Back
                 </button>
                 <span className="text-muted-foreground">/</span>
-                <h1 className="text-xl font-bold text-foreground">{selectedEvent.name}</h1>
+                
+                {/* Editable Section Only */}
+                <div className="flex items-center gap-2 group">
+                  {isEditingTitle ? (
+                    <input
+                    type="text"
+                    aria-label="Event title"
+                    value={selectedEvent.name}
+                    onChange={(e) => handleUpdateEventName(e.target.value)}
+                    onBlur={() => setIsEditingTitle(false)}
+                    onKeyDown={(e) => e.key === "Enter" && setIsEditingTitle(false)}
+                    className="bg-transparent border-b border-primary text-xl font-bold text-foreground outline-none px-1"
+                    autoFocus
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsEditingTitle(true)}>
+                      <h1 className="text-xl font-bold text-foreground uppercase">{selectedEvent.name}</h1>
+                      <Pencil size={14} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  )}
+                </div>
+
                 <Badge className={cn("capitalize shadow-none", typeColors[selectedEvent.type])}>{selectedEvent.type}</Badge>
               </div>
               <p className="text-sm text-muted-foreground pl-1">{selectedEvent.venue} · {selectedEvent.date}</p>

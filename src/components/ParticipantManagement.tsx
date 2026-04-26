@@ -1,39 +1,63 @@
 import { useState } from "react";
-import type { EventType } from "@/components/DashboardSidebar";
-import ParticipantTable, { type Participant } from "@/components/ParticipantTable";
+import ParticipantTable, { type Participant } from "./ParticipantTable";
+import { type EventType } from "./DashboardSidebar";
 
 interface Props {
   eventType: EventType;
   isCustomEvent?: boolean;
 }
 
-const techCategories = ["Exhibitors", "Judges", "Volunteers", "Visitors", "Others"];
-const guestCategories = ["Guest List", "Others"];
-
 const ParticipantManagement = ({ eventType, isCustomEvent }: Props) => {
-  const isTech = eventType === "tech";
-  const categories = isTech ? techCategories : guestCategories;
+  // --- Titles کی State (Ab ye editable hain) ---
+  const [titles, setTitles] = useState({
+    exhibitors: "Exhibitors",
+    judges: "Judges",
+    volunteers: "Volunteers",
+  });
 
-  const [data, setData] = useState<Record<string, Participant[]>>(
-    Object.fromEntries(categories.map((c) => [c, []]))
-  );
+  const [exhibitors, setExhibitors] = useState<Participant[]>([]);
+  const [judges, setJudges] = useState<Participant[]>([]);
+  const [volunteers, setVolunteers] = useState<Participant[]>([]);
 
-  const updateCategory = (category: string) => (participants: Participant[]) => {
-    setData((prev) => ({ ...prev, [category]: participants }));
+  // Title update karne ka function
+  const updateTitle = (key: keyof typeof titles, newTitle: string) => {
+    setTitles((prev) => ({ ...prev, [key]: newTitle }));
   };
 
   return (
-    <div className="space-y-6">
-      {categories.map((cat) => (
-        <ParticipantTable
-          key={cat}
-          title={cat}
-          participants={data[cat] || []}
-          onUpdate={updateCategory(cat)}
-          isTechEvent={isTech}
-          isCustomEvent={isCustomEvent}
-        />
-      ))}
+    <div className="space-y-8">
+      {/* Exhibitors Section */}
+      <ParticipantTable
+        title={titles.exhibitors}
+        onTitleChange={(newTitle) => updateTitle("exhibitors", newTitle)} // Naya Prop
+        participants={exhibitors}
+        onUpdate={setExhibitors}
+        isTechEvent={eventType === "tech"}
+        isCustomEvent={isCustomEvent}
+        editableTitle // Editable feature enable karne ke liye
+      />
+
+      {/* Judges Section */}
+      <ParticipantTable
+        title={titles.judges}
+        onTitleChange={(newTitle) => updateTitle("judges", newTitle)}
+        participants={judges}
+        onUpdate={setJudges}
+        isTechEvent={eventType === "tech"}
+        isCustomEvent={isCustomEvent}
+        editableTitle
+      />
+
+      {/* Volunteers Section */}
+      <ParticipantTable
+        title={titles.volunteers}
+        onTitleChange={(newTitle) => updateTitle("volunteers", newTitle)}
+        participants={volunteers}
+        onUpdate={setVolunteers}
+        isTechEvent={eventType === "tech"}
+        isCustomEvent={isCustomEvent}
+        editableTitle
+      />
     </div>
   );
 };

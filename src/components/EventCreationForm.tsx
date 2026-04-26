@@ -62,10 +62,11 @@ const EventCreationForm = ({ onClose, onSubmit }: Props) => {
             Create New Event
           </h2>
           <button
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <X className="w-5 h-5" />
+          onClick={onClose}
+          className="text-muted-foreground hover:text-foreground"
+          aria-label="Close"
+        >
+          <X className="w-5 h-5" />
           </button>
         </div>
 
