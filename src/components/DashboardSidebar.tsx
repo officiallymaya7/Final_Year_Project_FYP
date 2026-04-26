@@ -1,12 +1,10 @@
 import { useState } from "react";
-import {
-  Monitor, PartyPopper, Heart, Cake, LayoutGrid, Plus, ChevronDown, ChevronRight,
-} from "lucide-react";
+import { Monitor, Plus, ChevronDown, ChevronRight } from "lucide-react";
 import creovatorLogo from "@/assets/creovator-logo.png";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
-export type EventType = "tech" | "party" | "wedding" | "birthday" | "others";
+export type EventType = "tech";
 
 interface SidebarProps {
   activeType: EventType;
@@ -17,17 +15,18 @@ interface SidebarProps {
 
 const eventTypes: { key: EventType; label: string; icon: typeof Monitor }[] = [
   { key: "tech", label: "Tech Events", icon: Monitor },
-  { key: "party", label: "Party Events", icon: PartyPopper },
-  { key: "wedding", label: "Weddings", icon: Heart },
-  { key: "birthday", label: "Birthday Parties", icon: Cake },
-  { key: "others", label: "Others", icon: LayoutGrid },
 ];
 
-const DashboardSidebar = ({ activeType, onTypeChange, onCreateEvent, collapsed }: SidebarProps) => {
+const DashboardSidebar = ({
+  activeType,
+  onTypeChange,
+  onCreateEvent,
+}: SidebarProps) => {
   const [expanded, setExpanded] = useState(true);
 
   return (
     <aside className="w-64 min-h-screen bg-sidebar border-r border-sidebar-border flex flex-col">
+      
       {/* Logo */}
       <div className="p-5 border-b border-sidebar-border">
         <img src={creovatorLogo} alt="Creovator" className="h-10 object-contain" />
@@ -35,21 +34,29 @@ const DashboardSidebar = ({ activeType, onTypeChange, onCreateEvent, collapsed }
 
       {/* Create Event Button */}
       <div className="p-4">
-        <Button onClick={onCreateEvent} className="w-full gap-2 bg-primary hover:bg-primary/90">
+        <Button
+          onClick={onCreateEvent}
+          className="w-full gap-2 bg-primary hover:bg-primary/90"
+        >
           <Plus className="w-4 h-4" />
           Create Event
         </Button>
       </div>
 
-      {/* Event Types */}
+      {/* Event Type */}
       <nav className="flex-1 px-3">
         <button
           onClick={() => setExpanded(!expanded)}
           className="flex items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-full"
         >
-          {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-          Event Types
+          {expanded ? (
+            <ChevronDown className="w-3 h-3" />
+          ) : (
+            <ChevronRight className="w-3 h-3" />
+          )}
+          Event Type
         </button>
+
         {expanded && (
           <ul className="space-y-1">
             {eventTypes.map((et) => (
@@ -74,7 +81,9 @@ const DashboardSidebar = ({ activeType, onTypeChange, onCreateEvent, collapsed }
 
       {/* Footer */}
       <div className="p-4 border-t border-sidebar-border">
-        <p className="text-xs text-muted-foreground text-center">© 2026 Creovator</p>
+        <p className="text-xs text-muted-foreground text-center">
+          © 2026 Creovator
+        </p>
       </div>
     </aside>
   );
