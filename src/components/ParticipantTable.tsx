@@ -60,7 +60,7 @@ const ParticipantTable = ({
     toast.success("Participant removed");
   };
 
-  // ✅ IMPORT EXCEL (with validation)
+  // ✅ IMPORT WITH VALIDATION
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -73,16 +73,45 @@ const ParticipantTable = ({
         const ws = wb.Sheets[wb.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json<Record<string, string>>(ws);
 
-        const imported: Participant[] = rows.map((r) => ({
-          id: crypto.randomUUID(),
-          name: r.Name || r.name || "",
-          email: r.Email || r.email || "",
-          phone: r.Phone || r.phone || "",
-          organization: r.Organization || r.organization || "",
-        }));
+        const errors: string[] = [];
+
+        const imported: Participant[] = rows.map((r, index) => {
+          const name = r.Name || r.name || "";
+          const email = r.Email || r.email || "";
+          const phone = r.Phone || r.phone || "";
+          const organization = r.Organization || r.organization || "";
+
+          // validation rules
+          if (!/^[A-Za-z\s]{3,}$/.test(name)) {
+            errors.push(`Row ${index + 1}: Invalid Name`);
+          }
+
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            errors.push(`Row ${index + 1}: Invalid Email`);
+          }
+
+          if (!/^\d{11}$/.test(phone)) {
+            errors.push(`Row ${index + 1}: Invalid Phone`);
+          }
+
+          return {
+            id: crypto.randomUUID(),
+            name,
+            email,
+            phone,
+            organization,
+          };
+        });
+
+        // STOP IF ERROR
+        if (errors.length > 0) {
+          toast.error(errors[0]);
+          return;
+        }
 
         onUpdate([...participants, ...imported]);
         toast.success(`${imported.length} participants imported`);
+
       } catch {
         toast.error("Failed to parse Excel file");
       }
@@ -141,18 +170,16 @@ const ParticipantTable = ({
         </div>
 
         {/* BUTTONS */}
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2">
 
           <Button size="sm" onClick={() => setShowAdd(true)}>
             <Plus className="w-3.5 h-3.5" /> Add
           </Button>
 
-          {/* IMPORT BUTTON FIXED */}
           <label>
             <Button size="sm" asChild>
               <span>
-                <Upload className="w-3.5 h-3.5" />
-                Import Excel
+                <Upload className="w-3.5 h-3.5" /> Import Excel
               </span>
             </Button>
 
