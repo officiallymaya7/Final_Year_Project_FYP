@@ -1,18 +1,13 @@
 import { useState } from "react";
 import {
-  Plus, Pencil, Trash2, Award, BadgeCheck, Mail, Send, Download, Upload, Users,
+  Plus, Pencil, Download, Upload, Users,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 export interface Participant {
@@ -36,15 +31,12 @@ interface Props {
 const ParticipantTable = ({
   title,
   onTitleChange,
-  editableTitle,
   participants,
   onUpdate,
-  isTechEvent,
-  isCustomEvent,
 }: Props) => {
   const [showAdd, setShowAdd] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -63,33 +55,12 @@ const ParticipantTable = ({
     toast.success(`${form.name} added to ${title}`);
   };
 
-  const handleEdit = () => {
-    onUpdate(
-      participants.map((p) =>
-        p.id === editId ? { ...p, ...form } : p
-      )
-    );
-    resetForm();
-    setEditId(null);
-    toast.success("Participant updated");
-  };
-
   const handleDelete = (id: string) => {
     onUpdate(participants.filter((p) => p.id !== id));
     toast.success("Participant removed");
   };
 
-  const startEdit = (p: Participant) => {
-    setForm({
-      name: p.name,
-      email: p.email,
-      phone: p.phone,
-      organization: p.organization,
-    });
-    setEditId(p.id);
-  };
-
-  // ✅ ONLY FIXED PART (IMPORT EXCEL + VALIDATION)
+  // ✅ IMPORT EXCEL (with validation)
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -102,40 +73,13 @@ const ParticipantTable = ({
         const ws = wb.Sheets[wb.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json<Record<string, string>>(ws);
 
-        const errors: string[] = [];
-
-        const imported: Participant[] = rows.map((r, index) => {
-          const name = r.Name || r.name || "";
-          const email = r.Email || r.email || "";
-          const phone = r.Phone || r.phone || "";
-          const organization = r.Organization || r.organization || "";
-
-          // validation only
-          if (!/^[A-Za-z\s]{3,}$/.test(name)) {
-            errors.push(`Row ${index + 1}: Invalid Name`);
-          }
-
-          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            errors.push(`Row ${index + 1}: Invalid Email`);
-          }
-
-          if (!/^\d{11}$/.test(phone)) {
-            errors.push(`Row ${index + 1}: Invalid Phone`);
-          }
-
-          return {
-            id: crypto.randomUUID(),
-            name,
-            email,
-            phone,
-            organization,
-          };
-        });
-
-        if (errors.length > 0) {
-          toast.error(errors[0]);
-          return;
-        }
+        const imported: Participant[] = rows.map((r) => ({
+          id: crypto.randomUUID(),
+          name: r.Name || r.name || "",
+          email: r.Email || r.email || "",
+          phone: r.Phone || r.phone || "",
+          organization: r.Organization || r.organization || "",
+        }));
 
         onUpdate([...participants, ...imported]);
         toast.success(`${imported.length} participants imported`);
@@ -161,6 +105,7 @@ const ParticipantTable = ({
     a.href = URL.createObjectURL(blob);
     a.download = `${title.toLowerCase().replace(/\s+/g, "-")}.csv`;
     a.click();
+
     toast.success("Exported to CSV");
   };
 
@@ -169,6 +114,7 @@ const ParticipantTable = ({
 
       {/* HEADER */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-border">
+
         <div className="flex items-center gap-3">
           <Users className="w-5 h-5 text-primary" />
 
@@ -194,13 +140,22 @@ const ParticipantTable = ({
           <Badge>{participants.length}</Badge>
         </div>
 
-        <div className="flex gap-2">
+        {/* BUTTONS */}
+        <div className="flex gap-2 items-center">
+
           <Button size="sm" onClick={() => setShowAdd(true)}>
             <Plus className="w-3.5 h-3.5" /> Add
           </Button>
 
-          <label className="cursor-pointer">
-            <Upload className="w-3.5 h-3.5" /> Import Excel
+          {/* IMPORT BUTTON FIXED */}
+          <label>
+            <Button size="sm" asChild>
+              <span>
+                <Upload className="w-3.5 h-3.5" />
+                Import Excel
+              </span>
+            </Button>
+
             <input
               type="file"
               accept=".xlsx,.xls"
@@ -212,6 +167,7 @@ const ParticipantTable = ({
           <Button size="sm" onClick={handleExport}>
             <Download className="w-3.5 h-3.5" /> Export
           </Button>
+
         </div>
       </div>
 
