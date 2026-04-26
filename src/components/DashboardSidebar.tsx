@@ -14,7 +14,7 @@ interface SidebarProps {
 }
 
 const eventTypes: { key: EventType; label: string; icon: typeof Monitor }[] = [
-  { key: "tech", label: "Tech Events", icon: Monitor },
+  { key: "tech", label: "My Events", icon: Monitor },
 ];
 
 const DashboardSidebar = ({
