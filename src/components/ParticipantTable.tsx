@@ -40,9 +40,8 @@ const ParticipantTable = ({
   participants,
   onUpdate,
   isTechEvent,
-  isCustomEvent
+  isCustomEvent,
 }: Props) => {
-
   const [showAdd, setShowAdd] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -50,7 +49,7 @@ const ParticipantTable = ({
     name: "",
     email: "",
     phone: "",
-    organization: ""
+    organization: "",
   });
 
   const resetForm = () =>
@@ -85,12 +84,12 @@ const ParticipantTable = ({
       name: p.name,
       email: p.email,
       phone: p.phone,
-      organization: p.organization
+      organization: p.organization,
     });
     setEditId(p.id);
   };
 
-  // ✅ UPDATED IMPORT WITH VALIDATION (ONLY CHANGE)
+  // ✅ ONLY FIXED PART (IMPORT EXCEL + VALIDATION)
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -111,7 +110,7 @@ const ParticipantTable = ({
           const phone = r.Phone || r.phone || "";
           const organization = r.Organization || r.organization || "";
 
-          // 🔴 VALIDATION RULES
+          // validation only
           if (!/^[A-Za-z\s]{3,}$/.test(name)) {
             errors.push(`Row ${index + 1}: Invalid Name`);
           }
@@ -133,9 +132,8 @@ const ParticipantTable = ({
           };
         });
 
-        // ❌ STOP IF ERRORS FOUND
         if (errors.length > 0) {
-          toast.error(errors[0]); // show first error
+          toast.error(errors[0]);
           return;
         }
 
@@ -169,7 +167,7 @@ const ParticipantTable = ({
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden">
 
-      {/* HEADER (unchanged) */}
+      {/* HEADER */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-border">
         <div className="flex items-center gap-3">
           <Users className="w-5 h-5 text-primary" />
@@ -217,10 +215,30 @@ const ParticipantTable = ({
         </div>
       </div>
 
-      {/* TABLE (unchanged) */}
-      <div className="p-4 text-sm text-muted-foreground">
-        Table content same as before...
-      </div>
+      {/* TABLE */}
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>#</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Phone</TableHead>
+            <TableHead>Organization</TableHead>
+          </TableRow>
+        </TableHeader>
+
+        <TableBody>
+          {participants.map((p, i) => (
+            <TableRow key={p.id}>
+              <TableCell>{i + 1}</TableCell>
+              <TableCell>{p.name}</TableCell>
+              <TableCell>{p.email}</TableCell>
+              <TableCell>{p.phone}</TableCell>
+              <TableCell>{p.organization}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 };
