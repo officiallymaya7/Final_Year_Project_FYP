@@ -119,12 +119,6 @@ const Landing = () => {
           <div>
             <h2 className="text-lg font-semibold text-foreground">{welcomeMsg || "Welcome back, Organizer"}</h2>
             <div className="flex gap-4 mt-1">
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <CalendarDays className="w-3 h-3" /> 12 Total Events
-              </span>
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <BarChart3 className="w-3 h-3" /> 4 Upcoming
-              </span>
             </div>
           </div>
         </div>
