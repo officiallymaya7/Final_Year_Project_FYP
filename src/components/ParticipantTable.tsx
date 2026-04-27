@@ -1,12 +1,15 @@
 import { useState } from "react";
-import {
-  Plus, Pencil, Download, Upload, Users,
-} from "lucide-react";
+import { Plus, Pencil, Download, Upload, Users } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
 
@@ -33,9 +36,11 @@ const ParticipantTable = ({
   onTitleChange,
   participants,
   onUpdate,
+  editableTitle,
 }: Props) => {
   const [showAdd, setShowAdd] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editValue, setEditValue] = useState(title);
 
   const [form, setForm] = useState({
     name: "",
@@ -44,8 +49,7 @@ const ParticipantTable = ({
     organization: "",
   });
 
-  const resetForm = () =>
-    setForm({ name: "", email: "", phone: "", organization: "" });
+  const resetForm = () => setForm({ name: "", email: "", phone: "", organization: "" });
 
   const handleAdd = () => {
     const newP: Participant = { id: crypto.randomUUID(), ...form };
@@ -81,7 +85,6 @@ const ParticipantTable = ({
           const phone = r.Phone || r.phone || "";
           const organization = r.Organization || r.organization || "";
 
-          // validation rules
           if (!/^[A-Za-z\s]{3,}$/.test(name)) {
             errors.push(`Row ${index + 1}: Invalid Name`);
           }
@@ -103,7 +106,6 @@ const ParticipantTable = ({
           };
         });
 
-        // STOP IF ERROR
         if (errors.length > 0) {
           toast.error(errors[0]);
           return;
@@ -111,7 +113,6 @@ const ParticipantTable = ({
 
         onUpdate([...participants, ...imported]);
         toast.success(`${imported.length} participants imported`);
-
       } catch {
         toast.error("Failed to parse Excel file");
       }
@@ -139,89 +140,93 @@ const ParticipantTable = ({
   };
 
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden">
-
+    <div className="space-y-4">
       {/* HEADER */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-border">
-
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Users className="w-5 h-5 text-primary" />
-
-          {isEditingTitle ? (
+          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Users className="h-5 w-5 text-primary" />
+          </div>
+          {editableTitle && isEditingTitle ? (
             <input
-              className="bg-transparent border-b border-primary font-semibold"
-              value={title}
-              onChange={(e) => onTitleChange?.(e.target.value)}
-              onBlur={() => setIsEditingTitle(false)}
-              onKeyDown={(e) => e.key === "Enter" && setIsEditingTitle(false)}
+              className="bg-transparent border-b border-primary text-xl font-bold outline-none"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onBlur={() => {
+                onTitleChange?.(editValue);
+                setIsEditingTitle(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  onTitleChange?.(editValue);
+                  setIsEditingTitle(false);
+                }
+              }}
               autoFocus
             />
           ) : (
             <div
-              className="flex items-center gap-2 cursor-pointer"
-              onClick={() => setIsEditingTitle(true)}
+              className="flex items-center gap-2 group cursor-pointer"
+              onClick={() => editableTitle && setIsEditingTitle(true)}
             >
-              <h3 className="font-semibold">{title}</h3>
-              <Pencil size={14} />
+              <h2 className="text-xl font-bold">{title}</h2>
+              {editableTitle && (
+                <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100" />
+              )}
             </div>
           )}
-
-          <Badge>{participants.length}</Badge>
+          <Badge variant="secondary">{participants.length}</Badge>
         </div>
 
         {/* BUTTONS */}
-        <div className="flex gap-2">
-
+        <div className="flex items-center gap-2">
           <Button size="sm" onClick={() => setShowAdd(true)}>
-            <Plus className="w-3.5 h-3.5" /> Add
+            <Plus className="h-4 w-4 mr-1" /> Add
           </Button>
 
-          <label>
-            <Button size="sm" asChild>
-              <span>
-                <Upload className="w-3.5 h-3.5" /> Import Excel
-              </span>
-            </Button>
-
+          <div className="relative">
             <input
               type="file"
-              accept=".xlsx,.xls"
-              className="hidden"
+              accept=".xlsx,.xls,.csv"
               onChange={handleImport}
+              className="absolute inset-0 opacity-0 cursor-pointer"
             />
-          </label>
+            <Button size="sm" variant="outline">
+              <Upload className="h-4 w-4 mr-1" /> Import
+            </Button>
+          </div>
 
-          <Button size="sm" onClick={handleExport}>
-            <Download className="w-3.5 h-3.5" /> Export
+          <Button size="sm" variant="outline" onClick={handleExport}>
+            <Download className="h-4 w-4 mr-1" /> Export
           </Button>
-
         </div>
       </div>
 
       {/* TABLE */}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>#</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Phone</TableHead>
-            <TableHead>Organization</TableHead>
-          </TableRow>
-        </TableHeader>
-
-        <TableBody>
-          {participants.map((p, i) => (
-            <TableRow key={p.id}>
-              <TableCell>{i + 1}</TableCell>
-              <TableCell>{p.name}</TableCell>
-              <TableCell>{p.email}</TableCell>
-              <TableCell>{p.phone}</TableCell>
-              <TableCell>{p.organization}</TableCell>
+      <div className="border rounded-lg overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-12">#</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead>Organization</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {participants.map((p, i) => (
+              <TableRow key={p.id}>
+                <TableCell>{i + 1}</TableCell>
+                <TableCell className="font-medium">{p.name}</TableCell>
+                <TableCell>{p.email}</TableCell>
+                <TableCell>{p.phone}</TableCell>
+                <TableCell>{p.organization}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 };

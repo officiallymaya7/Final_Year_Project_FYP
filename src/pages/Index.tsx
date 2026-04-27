@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { CalendarDays, Users, BarChart3, ArrowLeft, Pencil } from "lucide-react";
-import DashboardSidebar, { type EventType } from "@/components/DashboardSidebar";
-import DashboardHeader from "@/components/DashboardHeader";
-import EventCreationForm, { type EventFormData } from "@/components/EventCreationForm";
-import CustomEventForm, { type CustomEventFormData } from "@/components/CustomEventForm";
-import ParticipantManagement from "@/components/ParticipantManagement";
-import CustomParticipantManagement from "@/components/CustomParticipantManagement";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import DashboardSidebar, { type EventType } from "../components/DashboardSidebar";
+import DashboardHeader from "../components/DashboardHeader";
+import EventCreationForm, { type EventFormData } from "../components/EventCreationForm";
+import CustomEventForm, { type CustomEventFormData } from "../components/CustomEventForm";
+import ParticipantManagement from "../components/ParticipantManagement";
+import CustomParticipantManagement from "../components/CustomParticipantManagement";
+import { cn } from "../lib/utils";
 
 type View = "overview" | "participants";
 
@@ -17,22 +16,24 @@ interface DashboardEvent extends EventFormData {
 }
 
 const sampleEvents: DashboardEvent[] = [
-  { id: "1", name: "Hackathon 2026", date: "2026-04-15", venue: "Main Auditorium", type: "tech", description: "Annual coding hackathon" },
-  { id: "2", name: "Spring Gala", date: "2026-05-10", venue: "Grand Ballroom", type: "party", description: "Formal spring celebration" },
-  { id: "3", name: "AI Summit", date: "2026-06-20", venue: "Tech Center", type: "tech", description: "AI & ML conference" },
+  {
+    id: "1",
+    name: "Creovator Launch Event",
+    startDate: "2026-05-01",
+    endDate: "2026-05-02",
+    venue: "JUW Auditorium",
+    type: "tech",
+    description: "Final Year Project Showcase",
+  },
 ];
 
-const typeColors: Record<EventType, string> = {
-  tech: "bg-primary/20 text-primary",
-  party: "bg-warning/20 text-warning",
-  wedding: "bg-destructive/20 text-destructive",
-  birthday: "bg-success/20 text-success",
-  others: "bg-muted text-muted-foreground",
-};
+const validTypes = ["tech", "party", "wedding", "birthday", "others"];
 
 const Index = () => {
   const [searchParams] = useSearchParams();
-  const initialType = (searchParams.get("type") as EventType) || "tech";
+  const paramType = searchParams.get("type");
+  const initialType = (validTypes.includes(paramType as string) ? paramType : "tech") as EventType;
+
   const [activeType, setActiveType] = useState<EventType>(initialType);
   const [showCreate, setShowCreate] = useState(false);
   const [showCustomCreate, setShowCustomCreate] = useState(false);
@@ -40,50 +41,48 @@ const Index = () => {
   const [selectedEvent, setSelectedEvent] = useState<DashboardEvent | null>(null);
   const [view, setView] = useState<View>("overview");
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-
+  const [editName, setEditName] = useState("");
   const [userName, setUserName] = useState("Organizer");
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      setUserName(userData.name || "Organizer");
-    }
+    try {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        setUserName(userData.name || "Organizer");
+      }
+    } catch { setUserName("Organizer"); }
   }, []);
 
-  const userInitial = userName.charAt(0).toUpperCase();
+  useEffect(() => {
+    if (selectedEvent) setEditName(selectedEvent.name);
+  }, [selectedEvent]);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const filteredEvents = events.filter((e) => e.type === activeType);
 
-  const handleUpdateEventName = (newName: string) => {
+  const stats = [
+    { label: "Total Events", value: events.length, icon: CalendarDays, color: "text-primary" },
+    { label: "This Category", value: filteredEvents.length, icon: BarChart3, color: "text-secondary" },
+    {
+      label: "Active Now",
+      value: events.filter((e) => {
+        const d = new Date(e.startDate);
+        return !isNaN(d.getTime()) && d >= today;
+      }).length,
+      icon: Users,
+      color: "text-success",
+    },
+  ];
+
+  const handleUpdateEventName = () => {
     if (!selectedEvent) return;
-    const updatedEvents = events.map((e) => 
-      e.id === selectedEvent.id ? { ...e, name: newName } : e
-    );
+    const updatedEvents = events.map((e) => (e.id === selectedEvent.id ? { ...e, name: editName } : e));
     setEvents(updatedEvents);
-    setSelectedEvent({ ...selectedEvent, name: newName });
-  };
-
-  const handleCreate = (data: EventFormData) => {
-    const newEvent: DashboardEvent = { ...data, id: crypto.randomUUID() };
-    setEvents((prev) => [...prev, newEvent]);
-    setShowCreate(false);
-    setSelectedEvent(newEvent);
-    setView("participants");
-  };
-
-  const handleCustomCreate = (data: CustomEventFormData) => {
-    const newEvent: DashboardEvent = {
-      id: crypto.randomUUID(),
-      name: data.name,
-      date: data.date,
-      venue: data.venue,
-      type: "others",
-      description: `[${data.customType}] ${data.description}`,
-    };
-    setEvents((prev) => [...prev, newEvent]);
-    setShowCustomCreate(false);
-    setSelectedEvent(newEvent);
-    setView("participants");
+    setSelectedEvent({ ...selectedEvent, name: editName });
+    setIsEditingTitle(false);
   };
 
   const handleCreateEvent = () => {
@@ -91,131 +90,131 @@ const Index = () => {
     else setShowCreate(true);
   };
 
-  const handleSelectEvent = (event: DashboardEvent) => {
-    setSelectedEvent(event);
-    setView("participants");
-  };
-
-  const stats = [
-    { label: "Total Events", value: events.length, icon: CalendarDays, color: "text-primary" },
-    { label: "This Category", value: filteredEvents.length, icon: BarChart3, color: "text-secondary" },
-    { label: "Active Now", value: events.filter((e) => new Date(e.date) >= new Date()).length, icon: Users, color: "text-success" },
-  ];
-
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen bg-background">
       <DashboardSidebar
         activeType={activeType}
-        onTypeChange={(t) => { setActiveType(t); setView("overview"); setSelectedEvent(null); }}
+        onTypeChange={(t) => {
+          setActiveType(t);
+          setView("overview");
+          setSelectedEvent(null);
+        }}
         onCreateEvent={handleCreateEvent}
       />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <main className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader />
 
-        <main className="flex-1 p-6 overflow-auto">
-          {view === "overview" && (
-            <div className="space-y-6 max-w-6xl">
-              <div className="bg-card border border-border/50 rounded-2xl p-8 mb-6 shadow-sm flex items-center gap-6">
-                <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-primary/20">
-                  {userInitial}
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-foreground">Welcome Back, {userName}! 👋</h1>
-                  <p className="text-muted-foreground mt-1 text-lg">
-                    {activeType === "tech" ? "Tech Events" : activeType === "party" ? "Party Events" : activeType === "wedding" ? "Weddings" : activeType === "birthday" ? "Birthday Parties" : "Other Events"} Overview
-                  </p>
-                </div>
-              </div>
+        <div className="flex-1 overflow-y-auto p-6">
+          {view === "overview" ? (
+            <div className="max-w-6xl mx-auto space-y-8">
+              <h1 className="text-3xl font-bold text-foreground">Welcome, {userName} 👋</h1>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {stats.map((s) => (
-                  <div key={s.label} className="bg-card border border-border rounded-xl p-5 flex items-center gap-4 hover:shadow-md transition-shadow">
-                    <div className={cn("w-10 h-10 rounded-lg bg-muted flex items-center justify-center", s.color)}>
-                      <s.icon className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-foreground">{s.value}</p>
-                      <p className="text-xs text-muted-foreground">{s.label}</p>
-                    </div>
+                  <div key={s.label} className="bg-card p-6 rounded-xl border border-border shadow-sm">
+                    <s.icon className={cn("h-5 w-5 mb-2", s.color)} />
+                    <div className="text-2xl font-bold">{s.value}</div>
+                    <div className="text-sm text-muted-foreground">{s.label}</div>
                   </div>
                 ))}
               </div>
 
-              <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                <div className="p-4 border-b border-border bg-muted/20">
-                  <h2 className="font-semibold text-foreground">Active Events</h2>
-                </div>
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold capitalize text-foreground">{activeType} Events</h2>
                 {filteredEvents.length > 0 ? (
-                  <div className="divide-y divide-border">
-                    {filteredEvents.map((event) => (
-                      <button
-                        key={event.id}
-                        onClick={() => handleSelectEvent(event)}
-                        className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors text-left"
-                      >
-                        <div>
-                          <p className="font-medium text-foreground">{event.name}</p>
-                          <p className="text-sm text-muted-foreground">{event.venue} · {event.date}</p>
-                        </div>
-                        <Badge className={cn("capitalize shadow-none", typeColors[event.type])}>{event.type}</Badge>
-                      </button>
-                    ))}
-                  </div>
+                  filteredEvents.map((event) => (
+                    <button
+                      key={event.id}
+                      onClick={() => { setSelectedEvent(event); setView("participants"); }}
+                      className="block w-full p-4 border border-border rounded-xl text-left hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="font-semibold text-lg">{event.name}</div>
+                      <div className="text-sm text-muted-foreground">{event.venue} • {event.startDate}</div>
+                    </button>
+                  ))
                 ) : (
-                  <div className="p-16 text-center text-muted-foreground">
-                    <p className="text-lg">No events in this category yet.</p>
-                    <p className="text-sm">Click "Create Event" to get started.</p>
+                  <p className="text-muted-foreground italic">No events found in this category.</p>
+                )}
+              </div>
+            </div>
+          ) : selectedEvent && (
+            <div className="max-w-6xl mx-auto space-y-6">
+              <button
+                onClick={() => setView("overview")}
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" /> Back to Overview
+              </button>
+
+              <div className="flex items-center gap-4">
+                {isEditingTitle ? (
+                  <input
+                    type="text"
+                    placeholder="Enter event name"
+                    className="text-3xl font-bold bg-transparent border-b-2 border-primary outline-none text-foreground"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onBlur={handleUpdateEventName}
+                    onKeyDown={(e) => e.key === "Enter" && handleUpdateEventName()}
+                    autoFocus
+                  />
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-3xl font-bold text-foreground">{selectedEvent.name}</h1>
+                    <button
+                      onClick={() => setIsEditingTitle(true)}
+                      className="p-2 hover:bg-accent rounded-full transition-colors"
+                      aria-label="Edit event name"
+                    >
+                      <Pencil className="h-5 w-5 text-muted-foreground" />
+                    </button>
                   </div>
+                )}
+              </div>
+
+              <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+                {/* Yahan eventData={selectedEvent} pass kiya hai naye multi-day logic ke liye */}
+                {selectedEvent.type === "others" ? (
+                  <CustomParticipantManagement />
+                ) : (
+                  <ParticipantManagement 
+                    eventType={selectedEvent.type as EventType} 
+                    eventData={selectedEvent} 
+                  />
                 )}
               </div>
             </div>
           )}
+        </div>
+      </main>
 
-          {view === "participants" && selectedEvent && (
-            <div className="space-y-6 max-w-6xl">
-              <div className="flex items-center gap-3">
-                <button onClick={() => { setView("overview"); setSelectedEvent(null); }} className="text-sm font-medium text-primary hover:text-primary/80 flex items-center gap-1">
-                  <ArrowLeft className="w-3 h-3" /> Back
-                </button>
-                <span className="text-muted-foreground">/</span>
-                
-                {/* Editable Section Only */}
-                <div className="flex items-center gap-2 group">
-                  {isEditingTitle ? (
-                    <input
-                    type="text"
-                    aria-label="Event title"
-                    value={selectedEvent.name}
-                    onChange={(e) => handleUpdateEventName(e.target.value)}
-                    onBlur={() => setIsEditingTitle(false)}
-                    onKeyDown={(e) => e.key === "Enter" && setIsEditingTitle(false)}
-                    className="bg-transparent border-b border-primary text-xl font-bold text-foreground outline-none px-1"
-                    autoFocus
-                    />
-                  ) : (
-                    <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsEditingTitle(true)}>
-                      <h1 className="text-xl font-bold text-foreground uppercase">{selectedEvent.name}</h1>
-                      <Pencil size={14} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                  )}
-                </div>
+      {/* --- Forms with Auto-Redirect Logic --- */}
+      {showCreate && (
+        <EventCreationForm 
+          onClose={() => setShowCreate(false)} 
+          onSubmit={(data) => {
+            const newEvent = { ...data, id: Date.now().toString() };
+            setEvents((prev) => [...prev, newEvent]);
+            setSelectedEvent(newEvent);
+            setView("participants");
+            setShowCreate(false);
+          }} 
+        />
+      )}
 
-                <Badge className={cn("capitalize shadow-none", typeColors[selectedEvent.type])}>{selectedEvent.type}</Badge>
-              </div>
-              <p className="text-sm text-muted-foreground pl-1">{selectedEvent.venue} · {selectedEvent.date}</p>
-              {selectedEvent.type === "others" ? (
-                <CustomParticipantManagement />
-              ) : (
-                <ParticipantManagement eventType={selectedEvent.type} isCustomEvent={false} />
-              )}
-            </div>
-          )}
-        </main>
-      </div>
-
-      {showCreate && <EventCreationForm onClose={() => setShowCreate(false)} onSubmit={handleCreate} />}
-      {showCustomCreate && <CustomEventForm onClose={() => setShowCustomCreate(false)} onSubmit={handleCustomCreate} />}
+      {showCustomCreate && (
+        <CustomEventForm 
+          onClose={() => setShowCustomCreate(false)} 
+          onSubmit={(data) => {
+            const newEvent = { ...data, id: Date.now().toString(), type: "others" as EventType };
+            setEvents((prev) => [...prev, newEvent]);
+            setSelectedEvent(newEvent);
+            setView("participants");
+            setShowCustomCreate(false);
+          }}
+        />
+      )}
     </div>
   );
 };
