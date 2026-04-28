@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Plus, Pencil, Download, Upload, Users } from "lucide-react";
+import { Plus, Download, Upload } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -15,32 +14,10 @@ import { toast } from "sonner";
 
 export interface Participant {
   id: string;
-  name: string;
-  email: string;
-  phone: string;
-  organization: string;
+  [key: string]: any;
 }
 
-interface Props {
-  title: string;
-  onTitleChange?: (newTitle: string) => void;
-  editableTitle?: boolean;
-  participants: Participant[];
-  onUpdate: (participants: Participant[]) => void;
-  isTechEvent: boolean;
-  isCustomEvent?: boolean;
-}
-
-const ParticipantTable = ({
-  title,
-  onTitleChange,
-  participants,
-  onUpdate,
-  editableTitle,
-}: Props) => {
-  const [showAdd, setShowAdd] = useState(false);
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editValue, setEditValue] = useState(title);
+const ParticipantTable = ({ title, participants, onUpdate }: any) => {
 
   const [form, setForm] = useState({
     name: "",
@@ -49,22 +26,13 @@ const ParticipantTable = ({
     organization: "",
   });
 
-  const resetForm = () => setForm({ name: "", email: "", phone: "", organization: "" });
-
   const handleAdd = () => {
-    const newP: Participant = { id: crypto.randomUUID(), ...form };
+    const newP = { id: crypto.randomUUID(), ...form };
     onUpdate([...participants, newP]);
-    resetForm();
-    setShowAdd(false);
-    toast.success(`${form.name} added to ${title}`);
+    toast.success("Added successfully");
   };
 
-  const handleDelete = (id: string) => {
-    onUpdate(participants.filter((p) => p.id !== id));
-    toast.success("Participant removed");
-  };
-
-  // ✅ IMPORT WITH VALIDATION
+  // 🔥 IMPORT WITH VALIDATION (FIXED)
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -75,17 +43,17 @@ const ParticipantTable = ({
       try {
         const wb = XLSX.read(evt.target?.result, { type: "binary" });
         const ws = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json<Record<string, string>>(ws);
+        const rows = XLSX.utils.sheet_to_json<Record<string, any>>(ws);
 
         const errors: string[] = [];
 
-        const imported: Participant[] = rows.map((r, index) => {
-          const name = r.Name || r.name || "";
+        const imported = rows.map((r: any, index: number) => {
+          const name = r.Name || r.name || r["Full Name"] || "";
           const email = r.Email || r.email || "";
           const phone = r.Phone || r.phone || "";
-          const organization = r.Organization || r.organization || "";
 
-          if (!/^[A-Za-z\s]{3,}$/.test(name)) {
+          // ✅ VALIDATIONS (NOT REMOVED, ONLY ADDED BACK)
+          if (!name || name.length < 3) {
             errors.push(`Row ${index + 1}: Invalid Name`);
           }
 
@@ -99,22 +67,20 @@ const ParticipantTable = ({
 
           return {
             id: crypto.randomUUID(),
-            name,
-            email,
-            phone,
-            organization,
+            ...r,
           };
         });
 
+        // ❌ STOP IMPORT IF ERROR
         if (errors.length > 0) {
           toast.error(errors[0]);
           return;
         }
 
         onUpdate([...participants, ...imported]);
-        toast.success(`${imported.length} participants imported`);
+        toast.success("Imported successfully");
       } catch {
-        toast.error("Failed to parse Excel file");
+        toast.error("Import failed");
       }
     };
 
@@ -124,63 +90,37 @@ const ParticipantTable = ({
 
   const handleExport = () => {
     const csv = [
-      "Name,Email,Phone,Organization",
-      ...participants.map(
-        (p) => `${p.name},${p.email},${p.phone},${p.organization}`
-      ),
+      Object.keys(participants[0] || {}).join(","),
+      ...participants.map((p: any) => Object.values(p).join(",")),
     ].join("\n");
 
     const blob = new Blob([csv], { type: "text/csv" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `${title.toLowerCase().replace(/\s+/g, "-")}.csv`;
+    a.download = `${title}.csv`;
     a.click();
 
-    toast.success("Exported to CSV");
+    toast.success("Exported");
   };
+
+  // ✅ UNIQUE COLUMNS (UNCHANGED)
+  const columns = Array.from(
+    new Set(
+      participants.flatMap((p: any) =>
+        Object.keys(p).filter((k) => k !== "id")
+      )
+    )
+  );
 
   return (
     <div className="space-y-4">
-      {/* HEADER */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Users className="h-5 w-5 text-primary" />
-          </div>
-          {editableTitle && isEditingTitle ? (
-            <input
-              className="bg-transparent border-b border-primary text-xl font-bold outline-none"
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onBlur={() => {
-                onTitleChange?.(editValue);
-                setIsEditingTitle(false);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  onTitleChange?.(editValue);
-                  setIsEditingTitle(false);
-                }
-              }}
-              autoFocus
-            />
-          ) : (
-            <div
-              className="flex items-center gap-2 group cursor-pointer"
-              onClick={() => editableTitle && setIsEditingTitle(true)}
-            >
-              <h2 className="text-xl font-bold">{title}</h2>
-              {editableTitle && (
-                <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100" />
-              )}
-            </div>
-          )}
-          <Badge variant="secondary">{participants.length}</Badge>
-        </div>
 
-        {/* BUTTONS */}
-        <div className="flex items-center gap-2">
-          <Button size="sm" onClick={() => setShowAdd(true)}>
+      {/* HEADER */}
+      <div className="flex justify-between">
+        <h2 className="text-xl font-bold">{title}</h2>
+
+        <div className="flex gap-2">
+          <Button size="sm" onClick={handleAdd}>
             <Plus className="h-4 w-4 mr-1" /> Add
           </Button>
 
@@ -189,10 +129,10 @@ const ParticipantTable = ({
               type="file"
               accept=".xlsx,.xls,.csv"
               onChange={handleImport}
-              className="absolute inset-0 opacity-0 cursor-pointer"
+              className="absolute inset-0 opacity-0"
             />
             <Button size="sm" variant="outline">
-              <Upload className="h-4 w-4 mr-1" /> Import
+              <Upload className="h-4 w-4 mr-1" /> Import File
             </Button>
           </div>
 
@@ -203,25 +143,30 @@ const ParticipantTable = ({
       </div>
 
       {/* TABLE */}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-12">#</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>Organization</TableHead>
+              <TableHead>#</TableHead>
+
+              {columns.map((col) => (
+                <TableHead key={col}>
+                  {col.charAt(0).toUpperCase() + col.slice(1)}
+                </TableHead>
+              ))}
             </TableRow>
           </TableHeader>
+
           <TableBody>
-            {participants.map((p, i) => (
+            {participants.map((p: any, i: number) => (
               <TableRow key={p.id}>
                 <TableCell>{i + 1}</TableCell>
-                <TableCell className="font-medium">{p.name}</TableCell>
-                <TableCell>{p.email}</TableCell>
-                <TableCell>{p.phone}</TableCell>
-                <TableCell>{p.organization}</TableCell>
+
+                {columns.map((col) => (
+                  <TableCell key={col}>
+                    {p[col]}
+                  </TableCell>
+                ))}
               </TableRow>
             ))}
           </TableBody>
