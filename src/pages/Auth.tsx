@@ -4,17 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Eye, EyeOff, ArrowLeft, ChevronDown } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import creovatorLogo from "@/assets/creovator-logo.png";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase"; // Supabase import کریں
+import { supabase } from "@/lib/supabase";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [role, setRole] = useState("organizer"); 
+  const [role] = useState("organizer"); // Role fixed for now
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -33,33 +33,42 @@ const Auth = () => {
 
   const validate = () => {
     const errs: Record<string, string> = {};
-    if (!isLogin && !form.name.trim()) errs.name = "Name is required";
-    if (!form.email.trim()) errs.email = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = "Invalid email";
-    
-    if (!form.password) errs.password = "Password is required";
-    else if (form.password.length < 6) errs.password = "Min 6 characters required";
     
     if (!isLogin) {
-      if (!form.confirmPassword) errs.confirmPassword = "Confirm your password";
-      else if (form.password !== form.confirmPassword) errs.confirmPassword = "Passwords don't match";
+      if (!form.name.trim()) {
+        errs.name = "Name is required";
+      } else if (!/^[A-Za-z\s]+$/.test(form.name)) {
+        errs.name = "Invalid name! Please use only alphabets.";
+      }
     }
+
+    if (!form.email.trim()) {
+      errs.email = "Email is required";
+    } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(form.email)) {
+      errs.email = "Invalid email format (e.g. name@example.com)";
+    }
+    
+    if (!form.password) {
+      errs.password = "Password is required";
+    } else if (form.password.length < 6) {
+      errs.password = "Min 6 characters required";
+    }
+    
+    if (!isLogin) {
+      if (!form.confirmPassword) {
+        errs.confirmPassword = "Confirm your password";
+      } else if (form.password !== form.confirmPassword) {
+        errs.confirmPassword = "Passwords don't match";
+      }
+    }
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => { // async شامل کیا
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-
-    if (!isLogin && role !== "organizer") {
-      toast({
-        variant: "destructive",
-        title: "Coming Soon!",
-        description: `The ${role.charAt(0).toUpperCase() + role.slice(1)} portal is under development.`,
-      });
-      return;
-    }
 
     setLoading(true);
 
@@ -102,7 +111,6 @@ const Auth = () => {
   const toggle = () => {
     setIsLogin(!isLogin);
     setErrors({});
-    setRole("organizer");
     setForm({ name: "", email: "", password: "", confirmPassword: "" });
   };
 
@@ -133,39 +141,17 @@ const Auth = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
-                <>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input
-                      id="name"
-                      placeholder="Maya Khurshid"
-                      value={form.name}
-                      onChange={(e) => update("name", e.target.value)}
-                      className={errors.name ? "border-destructive" : ""}
-                    />
-                    {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="role">Register as</Label>
-                    <div className="relative">
-                      <select
-                        id="role"
-                        value={role}
-                        onChange={(e) => setRole(e.target.value)}
-                        className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm appearance-none cursor-pointer focus:ring-2 focus:ring-primary"
-                        aria-label="Register as"
-                      >
-                      
-                        <option value="organizer">Event Organizer</option>
-                        <option value="participant">Participant</option>
-                        <option value="judge">Judge</option>
-                        <option value="guest">Guest</option>
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                    </div>
-                  </div>
-                </>
+                <div className="space-y-1.5">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    placeholder="Enter Your Name (Alphabets only)"
+                    value={form.name}
+                    onChange={(e) => update("name", e.target.value)}
+                    className={errors.name ? "border-destructive" : ""}
+                  />
+                  {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+                </div>
               )}
 
               <div className="space-y-1.5">

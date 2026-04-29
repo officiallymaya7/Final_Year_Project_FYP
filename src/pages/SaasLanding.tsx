@@ -47,9 +47,9 @@ const steps = [
 ];
 
 const plans = [
-  { name: "Basic", price: "9", period: "/month", features: ["5 Events/month", "100 Participants", "Email Support", "Basic Templates"], highlighted: false },
-  { name: "Pro", price: "29", period: "/month", features: ["Unlimited Events", "5,000 Participants", "Priority Support", "Custom Templates", "Analytics", "QR Check-in"], highlighted: true },
-  { name: "Enterprise", price: "99", period: "/month", features: ["Unlimited Everything", "Dedicated Manager", "Custom Branding", "API Access", "SSO Integration", "SLA Guarantee"], highlighted: false },
+  { name: "Basic", price: "9", period: "/month", features: ["5 Events/month", "100 Participants", "Basic Email Support", "Basic Templates"], highlighted: false },
+  { name: "Pro", price: "29", period: "/month", features: ["Unlimited Events", "1,000 Participants", "Limited Email Automation", "Custom Templates", "Analytics", "QR Check-in"], highlighted: true },
+  { name: "Enterprise", price: "99", period: "/month", features: ["Unlimited Events", "5,000 Participants", "Bulk Creation", "Email Automation", "AI Content Generation", "Analytics", "QR Check-in"], highlighted: false },
 ];
 
 const team = [
@@ -63,25 +63,25 @@ const team = [
     name: "Maya Khurshid Anwar", 
     role: "Lead & AI Automation Engineer", 
     image: "/team/maya.jpeg",
-    description: "A Final Year Software Engineering Student from Jinnah University for Women"
+    description: "A Final Year Software Engineering Student from Jinnah University for Women."
   },
   { 
     name: "Laiba Danish", 
     role: "Backend Engineer", 
     image: "/team/laiba.jpeg",
-    description: "A Final Year Software Engineering Student from Jinnah University for Women"
+    description: "A Final Year Software Engineering Student from Jinnah University for Women."
   },
   { 
     name: "Imsha Anmol", 
     role: "UI/UX Designer", 
     image: "/team/imsha.jpeg",
-    description: "A Final Year Software Engineering Student from Jinnah University for Women"
+    description: "A Final Year Software Engineering Student from Jinnah University for Women."
   },
   { 
     name: "Alishba Iftikhar", 
     role: "Frontend Developer", 
     image: "/team/alishba.jpeg",
-    description: "A Final Year Software Engineering Student from Jinnah University for Women"
+    description: "A Final Year Software Engineering Student from Jinnah University for Women."
   },
 ];
 
@@ -205,7 +205,7 @@ const SaasLanding = () => {
           </nav>
           <div className="flex items-center gap-3">
             <Button variant="outline" size="sm" onClick={goAuth}>Login</Button>
-            <Button size="sm" onClick={goAuth}>Get Started</Button>
+            <Button size="sm" onClick={goAuth}>Sign Up</Button>
           </div>
         </div>
       </header>
@@ -229,7 +229,7 @@ const SaasLanding = () => {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
             <Button size="lg" onClick={goAuth} className="h-14 px-8 text-lg font-bold shadow-xl shadow-primary/20">
-              Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
+              Get Started <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button variant="outline" size="lg" onClick={scrollToDemo} className="h-14 px-8 text-lg font-bold border-primary/30 bg-primary/5">
                <Play className="mr-2 h-5 w-5 fill-primary text-primary" /> Watch Story

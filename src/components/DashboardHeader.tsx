@@ -10,7 +10,7 @@ const DashboardHeader = () => {
   const [userName, setUserName] = useState("Organizer");
 
   useEffect(() => {
-    // Supabase سے سیشن اور یوزر ڈیٹا حاصل کرنا
+    
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user && user.user_metadata) {
