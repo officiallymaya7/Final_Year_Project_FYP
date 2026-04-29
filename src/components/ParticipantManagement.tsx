@@ -1,168 +1,207 @@
 import { useState, useEffect } from "react";
-import type { EventType } from "@/components/DashboardSidebar";
-import ParticipantTable, { type Participant } from "@/components/ParticipantTable";
+import ParticipantTable, { type Participant } from "./ParticipantTable";
 import { cn } from "@/lib/utils";
-import { Pencil } from "lucide-react";
+import { Plus, Pencil, Check, X } from "lucide-react";
+import { Button } from "./ui/button";
+import { supabase } from "../lib/supabase";
+import { toast } from "sonner";
 
 interface Props {
-  eventType: EventType;
-  eventData?: any; // Index.tsx se event details lene ke liye
+  eventType: string;
+  eventData?: {
+    id: string;
+    name: string;
+    type: string;
+    startDate?: string;
+    endDate?: string;
+    [key: string]: any;
+  } | null;
 }
 
-const techCategories = ["Exhibitors", "Judges", "Volunteers", "Visitors", "Others"];
-const guestCategories: string[] = [];
+const techCategories = ["Exhibitors", "Judges", "Volunteers", "Visitors"];
 
 const ParticipantManagement = ({ eventType, eventData }: Props) => {
-  const isTech = eventType === "tech";
-  const categories = isTech ? techCategories : guestCategories;
+  if (!eventData || !eventData.id) {
+    return (
+      <div className="p-10 text-center bg-card rounded-xl border border-border mt-10 mx-4">
+        <p className="text-[#F9BB1E] italic font-medium animate-pulse">
+          ✨ Loading event data...
+        </p>
+      </div>
+    );
+  }
 
-  // --- Multi-Day Logic ---
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [currentName, setCurrentName] = useState(eventData.name);
+
+  const handleNameUpdate = async () => {
+    if (!currentName.trim()) return;
+    try {
+      const { error } = await supabase
+        .from('events')
+        .update({ name: currentName })
+        .eq('id', eventData.id);
+
+      if (error) throw error;
+      setIsEditingName(false);
+      toast.success("Event name updated!");
+    } catch (err: any) {
+      toast.error("Error updating name");
+    }
+  };
+
+  const isTech = eventType === "tech" || eventData.type === "tech";
   const [activeDay, setActiveDay] = useState(1);
-  const [dayNames, setDayNames] = useState<string[]>([]);
-  const [editingDayIndex, setEditingDayIndex] = useState<number | null>(null);
-
-  // Participant data ab din ke hisaab se store hoga: { "Day 1": { "Exhibitors": [] } }
   const [data, setData] = useState<Record<string, Record<string, Participant[]>>>({});
-  const [customLists, setCustomLists] = useState<Record<string, string[]>>({});
+  const [customLists, setCustomLists] = useState<string[]>([]);
+
+  const calculateDayNames = () => {
+    if (!eventData.startDate || !eventData.endDate) return ["Day 1"];
+    const start = new Date(eventData.startDate);
+    const end = new Date(eventData.endDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const total = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return Array.from({ length: total > 0 ? total : 1 }, (_, i) => `Day ${i + 1}`);
+  };
+
+  const dayNames = calculateDayNames();
+  const currentDayName = dayNames[activeDay - 1] || "Day 1";
 
   useEffect(() => {
-    if (eventData?.startDate && eventData?.endDate) {
-      const s = new Date(eventData.startDate);
-      const e = new Date(eventData.endDate);
-      const diff = Math.abs(e.getTime() - s.getTime());
-      const total = Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1; //
+    const categories = isTech ? techCategories : ["Guest List"];
+    const initialData: any = {};
+    dayNames.forEach(day => {
+      initialData[day] = Object.fromEntries(categories.map((c) => [c, []]));
+    });
+    setData(initialData);
+  }, [isTech, eventData.startDate, eventData.endDate]);
 
-      const names = Array.from({ length: total }, (_, i) => `Day ${i + 1}`);
-      setDayNames(names);
-      
-      // Initial data structure setup for each day
-      const initialData: any = {};
-      const initialCustom: any = {};
-      names.forEach(name => {
-        initialData[name] = Object.fromEntries(categories.map((c) => [c, []]));
-        initialCustom[name] = [];
-      });
-      setData(initialData);
-      setCustomLists(initialCustom);
-    }
-  }, [eventData]);
-
-  const currentDayName = dayNames[activeDay - 1];
-
-  // Functions for current active day
   const updateCategory = (category: string) => (participants: Participant[]) => {
     setData((prev) => ({
       ...prev,
-      [currentDayName]: { ...prev[currentDayName], [category]: participants }
+      [currentDayName]: {
+        ...(prev[currentDayName] || {}),
+        [category]: participants
+      }
     }));
   };
 
-  const addCustomList = () => {
-    const name = window.prompt("Enter List Name (e.g. Sponsors, VIPs)");
-    if (!name || !currentDayName) return;
-    setCustomLists((prev) => ({
-      ...prev,
-      [currentDayName]: [...(prev[currentDayName] || []), name]
-    }));
-  };
-
-  const renameDay = (index: number, newName: string) => {
-    const oldName = dayNames[index];
-    const updatedNames = [...dayNames];
-    updatedNames[index] = newName;
-    setDayNames(updatedNames);
-
-    // Data ko naye naam par shift karna
-    setData((prev) => {
-      const newData = { ...prev };
-      newData[newName] = newData[oldName];
-      delete newData[oldName];
-      return newData;
-    });
-    setEditingDayIndex(null);
+  const handleAddList = () => {
+    const name = window.prompt("Enter List Name (e.g. VIPs, Speakers):");
+    if (name && name.trim()) {
+      const listName = name.trim();
+      setCustomLists((prev) => [...prev, listName]);
+      setData((prev) => ({
+        ...prev,
+        [currentDayName]: {
+          ...(prev[currentDayName] || {}),
+          [listName]: []
+        }
+      }));
+    }
   };
 
   return (
-    <div className="space-y-6">
-      {/* 🗓️ MULTI-DAY TABS */}
-      <div className="flex gap-2 overflow-x-auto pb-2 border-b border-border scrollbar-hide">
-        {dayNames.map((name, index) => (
-          <div key={index} className="relative group">
+    <div className="space-y-6 p-6 bg-card rounded-2xl border border-border shadow-xl animate-in fade-in duration-500">
+
+      {/* ✅ SINGLE event title — sirf yahan, Index.tsx mein nahi */}
+      <div className="mb-2">
+        {isEditingName ? (
+          <div className="flex items-center gap-2 animate-in slide-in-from-left-2">
+            <input
+              className="text-3xl font-bold bg-transparent border-b-2 border-primary outline-none text-[#F9BB1E] min-w-[200px]"
+              value={currentName}
+              onChange={(e) => setCurrentName(e.target.value)}
+              autoFocus
+              onKeyDown={(e) => e.key === 'Enter' && handleNameUpdate()}
+              aria-label="Edit event name"
+            />
             <button
-              onClick={() => setActiveDay(index + 1)}
-              className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-all border flex items-center gap-2",
-                activeDay === index + 1 
-                  ? "bg-primary/20 border-[#F9BB1E] text-[#F9BB1E]" // Yellow highlight for active
-                  : "bg-card border-border text-muted-foreground hover:border-primary/50"
-              )}
+              onClick={handleNameUpdate}
+              className="p-2 hover:bg-success/20 rounded-full text-success"
+              aria-label="Save name"
             >
-
-              {editingDayIndex === index ? (
-                <input
-                  autoFocus
-                  className="bg-transparent outline-none w-24 border-b border-[#F9BB1E]"
-                  value={name}
-                  onChange={(e) => {
-                    const updated = [...dayNames];
-                    updated[index] = e.target.value;
-                    setDayNames(updated);
-                  }}
-                  onBlur={() => setEditingDayIndex(null)}
-                  aria-label="Day name"
-                />
-
-              ) : (
-                <>
-                  {name}
-                  <Pencil 
-                    className="h-3 w-3 opacity-0 group-hover:opacity-100 cursor-pointer" 
-                    onClick={(e) => { e.stopPropagation(); setEditingDayIndex(index); }}
-                  />
-                </>
-              )}
+              <Check className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => { setIsEditingName(false); setCurrentName(eventData.name); }}
+              className="p-2 hover:bg-destructive/20 rounded-full text-destructive"
+              aria-label="Cancel"
+            >
+              <X className="h-5 w-5" />
             </button>
           </div>
-        ))}
+        ) : (
+          <h1 className="text-3xl font-bold text-[#F9BB1E] flex items-center gap-3 group">
+            {currentName}
+            <button
+              onClick={() => setIsEditingName(true)}
+              className="p-1.5 bg-muted/50 rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-primary/20 hover:text-primary"
+              title="Edit event name"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+            <span className="text-sm font-normal text-muted-foreground bg-muted/30 px-2 py-0.5 rounded">
+              ({eventType})
+            </span>
+          </h1>
+        )}
       </div>
 
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-[#F9BB1E]">{currentDayName} Management</h3>
-        <button
-          onClick={addCustomList}
-          className="px-3 py-1 text-sm border border-primary/50 rounded-lg hover:bg-primary/10 text-primary transition-colors"
-        >
-          + Add Custom List
-        </button>
-      </div>
-
-      {/* 🔹 CATEGORIES FOR ACTIVE DAY */}
-      {currentDayName && data[currentDayName] && (
-        <div className="space-y-8">
-          {categories.map((cat) => (
-            <ParticipantTable
-              key={`${currentDayName}-${cat}`}
-              title={cat}
-              participants={data[currentDayName][cat] || []}
-              onUpdate={updateCategory(cat)}
-              isTechEvent={isTech}
-            />
-          ))}
-
-          {/* 🔥 CUSTOM LISTS FOR ACTIVE DAY */}
-          {(customLists[currentDayName] || []).map((list) => (
-            <ParticipantTable
-              key={`${currentDayName}-${list}`}
-              title={list}
-              participants={data[currentDayName][list] || []}
-              onUpdate={updateCategory(list)}
-              editableTitle={true}
-              isCustomEvent={true}
-              isTechEvent={isTech}
-            />
+      {/* Day Selection + Add List */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border pb-4">
+        <div className="flex flex-wrap gap-2">
+          {dayNames.map((name, i) => (
+            <Button
+              key={i}
+              variant={activeDay === i + 1 ? "default" : "outline"}
+              onClick={() => setActiveDay(i + 1)}
+              className={cn(
+                "transition-all",
+                activeDay === i + 1
+                  ? "bg-primary text-primary-foreground shadow-lg scale-105"
+                  : "hover:border-primary/50"
+              )}
+            >
+              {name}
+            </Button>
           ))}
         </div>
-      )}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleAddList}
+          className="gap-2 border-[#F9BB1E]/50 text-[#F9BB1E] hover:bg-[#F9BB1E]/10 font-bold"
+        >
+          <Plus className="h-4 w-4" /> Add Custom List
+        </Button>
+      </div>
+
+      {/* Participant Tables */}
+      <div className="grid grid-cols-1 gap-6">
+        {(isTech ? techCategories : ["Guest List"]).map((cat) => (
+          <ParticipantTable
+            key={`${currentDayName}-${cat}`}
+            title={cat}
+            event_id={eventData.id}
+            participants={data[currentDayName]?.[cat] || []}
+            onUpdate={updateCategory(cat)}
+            isTechEvent={isTech}
+          />
+        ))}
+
+        {customLists.map((list) => (
+          <ParticipantTable
+            key={`${currentDayName}-${list}`}
+            title={list}
+            event_id={eventData.id}
+            participants={data[currentDayName]?.[list] || []}
+            onUpdate={updateCategory(list)}
+            isCustomEvent={true}
+            isTechEvent={isTech}
+          />
+        ))}
+      </div>
     </div>
   );
 };

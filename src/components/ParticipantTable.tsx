@@ -1,231 +1,104 @@
 import { useState } from "react";
-import { Plus, Pencil, Download, Upload, Users } from "lucide-react";
-import * as XLSX from "xlsx";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { toast } from "sonner";
+import { Plus, Search, UserPlus, FileDown } from "lucide-react";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { cn } from "@/lib/utils";
 
+// 1. Participant ki definition
 export interface Participant {
   id: string;
   name: string;
   email: string;
-  phone: string;
-  organization: string;
+  phone?: string;
+  status: string;
+  category: string;
 }
 
+// 2. Props Interface (Yahan event_id add karna zaroori tha)
 interface Props {
   title: string;
-  onTitleChange?: (newTitle: string) => void;
-  editableTitle?: boolean;
+  event_id: string; // 🔥 Yeh line add ki hai taake ParticipantManagement ka error khatam ho
   participants: Participant[];
   onUpdate: (participants: Participant[]) => void;
-  isTechEvent: boolean;
+  isTechEvent?: boolean;
   isCustomEvent?: boolean;
 }
 
-const ParticipantTable = ({
-  title,
-  onTitleChange,
-  participants,
-  onUpdate,
-  editableTitle,
+const ParticipantTable = ({ 
+  title, 
+  event_id, // 🔥 Component mein receive kiya
+  participants, 
+  onUpdate, 
+  isTechEvent,
+  isCustomEvent 
 }: Props) => {
-  const [showAdd, setShowAdd] = useState(false);
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editValue, setEditValue] = useState(title);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    organization: "",
-  });
-
-  const resetForm = () => setForm({ name: "", email: "", phone: "", organization: "" });
-
-  const handleAdd = () => {
-    const newP: Participant = { id: crypto.randomUUID(), ...form };
-    onUpdate([...participants, newP]);
-    resetForm();
-    setShowAdd(false);
-    toast.success(`${form.name} added to ${title}`);
-  };
-
-  const handleDelete = (id: string) => {
-    onUpdate(participants.filter((p) => p.id !== id));
-    toast.success("Participant removed");
-  };
-
-  // ✅ IMPORT WITH VALIDATION
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-
-    reader.onload = (evt) => {
-      try {
-        const wb = XLSX.read(evt.target?.result, { type: "binary" });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json<Record<string, string>>(ws);
-
-        const errors: string[] = [];
-
-        const imported: Participant[] = rows.map((r, index) => {
-          const name = r.Name || r.name || "";
-          const email = r.Email || r.email || "";
-          const phone = r.Phone || r.phone || "";
-          const organization = r.Organization || r.organization || "";
-
-          if (!/^[A-Za-z\s]{3,}$/.test(name)) {
-            errors.push(`Row ${index + 1}: Invalid Name`);
-          }
-
-          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            errors.push(`Row ${index + 1}: Invalid Email`);
-          }
-
-          if (!/^\d{11}$/.test(phone)) {
-            errors.push(`Row ${index + 1}: Invalid Phone`);
-          }
-
-          return {
-            id: crypto.randomUUID(),
-            name,
-            email,
-            phone,
-            organization,
-          };
-        });
-
-        if (errors.length > 0) {
-          toast.error(errors[0]);
-          return;
-        }
-
-        onUpdate([...participants, ...imported]);
-        toast.success(`${imported.length} participants imported`);
-      } catch {
-        toast.error("Failed to parse Excel file");
-      }
-    };
-
-    reader.readAsBinaryString(file);
-    e.target.value = "";
-  };
-
-  const handleExport = () => {
-    const csv = [
-      "Name,Email,Phone,Organization",
-      ...participants.map(
-        (p) => `${p.name},${p.email},${p.phone},${p.organization}`
-      ),
-    ].join("\n");
-
-    const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `${title.toLowerCase().replace(/\s+/g, "-")}.csv`;
-    a.click();
-
-    toast.success("Exported to CSV");
-  };
+  // Search logic
+  const filteredParticipants = participants.filter(p => 
+    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="space-y-4">
-      {/* HEADER */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Users className="h-5 w-5 text-primary" />
-          </div>
-          {editableTitle && isEditingTitle ? (
-            <input
-              className="bg-transparent border-b border-primary text-xl font-bold outline-none"
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onBlur={() => {
-                onTitleChange?.(editValue);
-                setIsEditingTitle(false);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  onTitleChange?.(editValue);
-                  setIsEditingTitle(false);
-                }
-              }}
-              autoFocus
-            />
-          ) : (
-            <div
-              className="flex items-center gap-2 group cursor-pointer"
-              onClick={() => editableTitle && setIsEditingTitle(true)}
-            >
-              <h2 className="text-xl font-bold">{title}</h2>
-              {editableTitle && (
-                <Pencil className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100" />
-              )}
-            </div>
-          )}
-          <Badge variant="secondary">{participants.length}</Badge>
+    <div className="bg-card rounded-xl border border-border overflow-hidden">
+      <div className="p-4 border-b border-border bg-muted/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h3 className="font-bold text-lg flex items-center gap-2">
+            {title}
+            <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+              {participants.length}
+            </span>
+          </h3>
         </div>
 
-        {/* BUTTONS */}
         <div className="flex items-center gap-2">
-          <Button size="sm" onClick={() => setShowAdd(true)}>
-            <Plus className="h-4 w-4 mr-1" /> Add
-          </Button>
-
           <div className="relative">
-            <input
-              type="file"
-              accept=".xlsx,.xls,.csv"
-              onChange={handleImport}
-              className="absolute inset-0 opacity-0 cursor-pointer"
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search..."
+              className="pl-9 h-9 w-[200px] lg:w-[300px]"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <Button size="sm" variant="outline">
-              <Upload className="h-4 w-4 mr-1" /> Import
-            </Button>
           </div>
-
-          <Button size="sm" variant="outline" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-1" /> Export
+          <Button size="sm" variant="outline" className="gap-2 border-primary/20 text-primary">
+            <UserPlus className="h-4 w-4" /> Add
           </Button>
         </div>
       </div>
 
-      {/* TABLE */}
-      <div className="border rounded-lg overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">#</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>Organization</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {participants.map((p, i) => (
-              <TableRow key={p.id}>
-                <TableCell>{i + 1}</TableCell>
-                <TableCell className="font-medium">{p.name}</TableCell>
-                <TableCell>{p.email}</TableCell>
-                <TableCell>{p.phone}</TableCell>
-                <TableCell>{p.organization}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-left">
+          <thead className="bg-muted/50 text-muted-foreground font-medium border-b border-border">
+            <tr>
+              <th className="px-4 py-3">Name</th>
+              <th className="px-4 py-3">Email</th>
+              {isTechEvent && <th className="px-4 py-3">Phone</th>}
+              <th className="px-4 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {filteredParticipants.length > 0 ? (
+              filteredParticipants.map((p) => (
+                <tr key={p.id} className="hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-3 font-medium">{p.name}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{p.email}</td>
+                  {isTechEvent && <td className="px-4 py-3">{p.phone || "-"}</td>}
+                  <td className="px-4 py-3 text-right">
+                    <Button variant="ghost" size="sm">Edit</Button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground italic">
+                  No participants added to {title} yet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

@@ -154,7 +154,9 @@ const Auth = () => {
                         value={role}
                         onChange={(e) => setRole(e.target.value)}
                         className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm appearance-none cursor-pointer focus:ring-2 focus:ring-primary"
+                        aria-label="Register as"
                       >
+                      
                         <option value="organizer">Event Organizer</option>
                         <option value="participant">Participant</option>
                         <option value="judge">Judge</option>

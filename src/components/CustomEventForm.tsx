@@ -17,6 +17,7 @@ export interface CustomEventFormData {
   endDate: string;
   durationDays?: number;
   venue: string;
+  dayVenues?: string[]; // 🔥 Yeh array add kiya hai sync ke liye
   description: string;
 }
 
@@ -29,15 +30,14 @@ const CustomEventForm = ({ onClose, onSubmit }: Props) => {
     startDate: "",
     endDate: "",
     venue: "",
+    dayVenues: [], // 🔥 Initialize array
     description: "",
   });
 
-  // ✅ check past start date
   const isPastDate =
     form.startDate &&
     new Date(form.startDate) < new Date(today);
 
-  // ✅ calculate duration
   const duration =
     form.startDate && form.endDate
       ? Math.ceil(
@@ -47,8 +47,10 @@ const CustomEventForm = ({ onClose, onSubmit }: Props) => {
         ) + 1
       : null;
 
+  // ✅ Aapka manga hua handleSubmit logic yahan hai
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Submit Clicked!", form); // 👈 Yeh line temporarily add
 
     if (isPastDate) return;
     if (!form.startDate || !form.endDate) return;
@@ -67,18 +69,19 @@ const CustomEventForm = ({ onClose, onSubmit }: Props) => {
           (1000 * 60 * 60 * 24)
       ) + 1;
 
+    // 🔥 Sync logic: Single venue ko array mein wrap karke bhejna
     onSubmit({
       ...form,
       durationDays: diffDays,
+      dayVenues: [form.venue] 
     });
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
       <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-lg mx-4">
-
+        
         {/* Header */}
-// ...existing code...
         <div className="flex items-center justify-between p-6 border-b border-border">
           <h2 className="text-xl font-semibold">
             Create Your Own Event
@@ -87,7 +90,6 @@ const CustomEventForm = ({ onClose, onSubmit }: Props) => {
             <X className="w-5 h-5" />
           </button>
         </div>
-// ...existing code...
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -121,7 +123,6 @@ const CustomEventForm = ({ onClose, onSubmit }: Props) => {
 
           {/* Dates */}
           <div className="grid grid-cols-2 gap-4">
-
             <div>
               <Label>Start Date</Label>
               <Input

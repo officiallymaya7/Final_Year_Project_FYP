@@ -20,9 +20,12 @@ const App = () => (
         <Routes>
           <Route path="/" element={<SaasLanding />} />
           <Route path="/auth" element={<Auth />} />
+          
           <Route path="/dashboard" element={<Landing />} />
           <Route path="/dashboard/manage" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+
+         
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

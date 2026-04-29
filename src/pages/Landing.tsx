@@ -1,20 +1,23 @@
+import { Outlet } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Bell, User, CalendarDays, Monitor, PartyPopper, Cake, LayoutGrid,
-  Users, BarChart3, ArrowRight, Sparkles, LogOut,
+  Bell, Monitor, PartyPopper, ArrowRight, Sparkles, 
+  LogOut, CheckCircle2, Clock, Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { supabase } from "@/lib/supabase"; 
 import creovatorLogo from "@/assets/creovator-logo.png";
 import heroBg from "@/assets/hero-events.jpg";
 
-const stats = [
-  { label: "Total Events", value: "12", icon: CalendarDays, color: "text-primary" },
-  { label: "Tech Events", value: "5", icon: Monitor, color: "text-primary" },
-  { label: "Custom Events", value: "3", icon: LayoutGrid, color: "text-secondary" },
-  { label: "Participants", value: "1,240", icon: Users, color: "text-success" },
+const organizerTips = [
+  "Tip: Switch to Calendar view to see your upcoming event timeline.",
+  "Pro Tip: You can now batch-export certificates directly from the Design Queue.",
+  "Reminder: Check your 'Tech Events' category for new participant registrations.",
+  "Design Hint: AI-generated posters work best with high-resolution event logos.",
+  "Efficiency Tip: Use the 'My Events' tab to quickly duplicate previous event settings."
 ];
 
 const eventCards = [
@@ -44,161 +47,206 @@ const eventCards = [
   },
 ];
 
-const navLinks = ["Dashboard", "My Events", "Calendar"];
-
 const Landing = () => {
   const navigate = useNavigate();
   const [welcomeMsg, setWelcomeMsg] = useState("");
+  const [randomTip, setRandomTip] = useState("");
+  const [upcomingCount, setUpcomingCount] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+
+  // 🔒 Database Fetching Logic (Personalized for Login User)
+  const fetchStats = async () => {
+    try {
+      setLoading(true);
+      
+      // 1. Pehle current login user ki ID hasil karein
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        console.log("No active session found");
+        return;
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); 
+      const todayISO = today.toISOString();
+
+      // 2. Query mein '.eq('user_id', user.id)' add kiya taake sirf apna data dikhe
+      const { count, error } = await supabase
+        .from('events') 
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id) // 🔥 Filtering by current user
+        .gte('event_date', todayISO); 
+
+      if (!error && count !== null) {
+        setUpcomingCount(count);
+      }
+    } catch (err) {
+      console.error("DB Error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const authType = localStorage.getItem("authType");
     if (authType === "signup") setWelcomeMsg("Welcome 👋");
     else if (authType === "login") setWelcomeMsg("Welcome Back 👋");
-    // Clear after showing
+    
+    setRandomTip(organizerTips[Math.floor(Math.random() * organizerTips.length)]);
+    
+    fetchStats(); // Fetch personalized data on load
+
     return () => { localStorage.removeItem("authType"); };
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     localStorage.removeItem("user");
     localStorage.removeItem("authType");
     navigate("/auth");
   };
 
-  const handleCardClick = (key: string) => {
-    navigate(`/dashboard/manage?type=${key}`);
-  };
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#0f0a1f] text-foreground selection:bg-primary/30">
       {/* Navbar */}
-      <nav className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-md">
+      <nav className="sticky top-0 z-50 border-b border-white/5 bg-[#0f0a1f]/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-          <img src={creovatorLogo} alt="Creovator" className="h-9 object-contain" />
-          <div className="hidden md:flex items-center gap-6">
-            {navLinks.map((link) => (
-              <button
-                key={link}
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
+          <img src={creovatorLogo} alt="Creovator" className="h-9 object-contain cursor-pointer" onClick={() => navigate("/")} />
+          
+          <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-muted-foreground">
+            {["Dashboard", "My Events", "Calendar"].map((link) => (
+              <button key={link} className="hover:text-primary transition-all relative group">
                 {link}
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-3">
-            <Button size="icon" variant="ghost" className="relative">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary" />
+
+          <div className="flex items-center gap-4">
+            <Button size="icon" variant="ghost" className="relative hover:bg-primary/10">
+              <Bell className="w-5 h-5 text-muted-foreground" />
+              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#f9bb1e] border-2 border-[#0f0a1f]" />
             </Button>
-            <Avatar className="h-8 w-8 cursor-pointer">
-              <AvatarFallback className="bg-accent text-accent-foreground text-xs">OP</AvatarFallback>
+            <div className="h-8 w-[1px] bg-white/10 mx-1" />
+            <Avatar className="h-9 w-9 border-2 border-primary/20">
+              <AvatarFallback className="bg-gradient-to-br from-[#532062] to-[#2d256d] text-white text-xs font-bold font-serif">LD</AvatarFallback>
             </Avatar>
-            <Button size="sm" variant="ghost" className="gap-1.5 text-muted-foreground hover:text-destructive" onClick={handleLogout}>
+            <Button size="sm" variant="ghost" className="hidden sm:flex gap-2 text-muted-foreground hover:text-destructive" onClick={handleLogout}>
               <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Logout</span>
+              <span className="font-bold uppercase tracking-tighter">Logout</span>
             </Button>
           </div>
         </div>
       </nav>
 
-      {/* Welcome Message */}
-      {welcomeMsg && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-          <div className="bg-primary/10 border border-primary/20 rounded-xl px-6 py-4">
-            <h1 className="text-2xl font-bold text-foreground">{welcomeMsg}</h1>
-            <p className="text-sm text-muted-foreground mt-1">Let's get your events organized.</p>
-          </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        
+        {/* Welcome Section */}
+        <div className="mb-8">
+            <h2 className="text-4xl font-black tracking-tight text-white">{welcomeMsg || "Hello, Organizer"}</h2>
+            <p className="text-muted-foreground mt-2 font-medium">Your event management pipeline is live and synced.</p>
         </div>
-      )}
 
-      {/* Profile Summary */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex items-center gap-4">
-          <Avatar className="h-14 w-14">
-            <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">OP</AvatarFallback>
-          </Avatar>
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">{welcomeMsg || "Welcome back, Organizer"}</h2>
-            <div className="flex gap-4 mt-1">
+        {/* Hero Section */}
+        <section className="relative w-full rounded-[3rem] overflow-hidden min-h-[420px] shadow-2xl group border border-white/5 mb-8">
+          <img src={heroBg} alt="Hero" className="absolute inset-0 w-full h-full object-cover transition-transform duration-[3000ms] group-hover:scale-105" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0f0a1f] via-[#0f0a1f]/40 to-transparent" />
+          <div className="relative h-full flex flex-col justify-center px-10 sm:px-16 py-12">
+            <Badge className="w-fit mb-6 bg-primary/20 text-primary border-primary/40 px-4 py-1 backdrop-blur-md uppercase tracking-[0.2em] text-[10px] font-black">
+              Event Automation Hub
+            </Badge>
+            <h1 className="text-4xl sm:text-6xl font-black mb-6 leading-[1.1] text-white">
+              Revolutionize <br />
+              <span className="text-[#f9bb1e] italic text-5xl sm:text-7xl">Events.</span>
+            </h1>
+            <p className="text-lg text-gray-300 max-w-md mb-10 leading-relaxed font-medium">
+              The ultimate workspace for smart event organization and automated asset generation.
+            </p>
+            <Button className="w-fit gap-3 h-14 px-10 rounded-2xl font-black text-lg bg-primary hover:bg-primary/90 shadow-xl shadow-primary/30 transition-all hover:-translate-y-1" onClick={() => navigate("/dashboard/manage")}>
+              OPEN DASHBOARD <ArrowRight className="w-5 h-5" />
+            </Button>
+          </div>
+        </section>
+
+        {/* ⚡ HORIZONTAL PRIORITY PANEL (SYNKED WITH PERSONAL DB) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div className="group flex gap-5 items-center p-6 rounded-[2rem] bg-card/40 border border-white/5 hover:border-primary/30 backdrop-blur-xl transition-all shadow-xl cursor-pointer" onClick={() => navigate('/dashboard/manage')}>
+                <div className="bg-amber-500/10 p-4 rounded-2xl text-amber-500 group-hover:rotate-12 transition-transform">
+                  <Clock className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white uppercase tracking-wider">
+                    {loading ? "Fetching..." : `${upcomingCount} Upcoming Events`}
+                  </p>
+                  <p className="text-[11px] text-gray-400 font-medium mt-1">Showing only your scheduled events.</p>
+                </div>
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* Hero Banner */}
-      <section className="relative mx-4 sm:mx-6 lg:mx-auto max-w-7xl rounded-2xl overflow-hidden">
-        <img
-          src={heroBg}
-          alt="Event management hero banner"
-          className="w-full h-64 sm:h-80 object-cover"
-          width={1920}
-          height={640}
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/60 to-transparent" />
-        <div className="absolute inset-0 flex flex-col justify-center px-8 sm:px-12">
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
-            Manage Your Events <span className="gradient-text">Seamlessly</span>
-          </h1>
-          <p className="text-sm sm:text-base text-muted-foreground max-w-lg">
-            Create, organize and track everything in one place
-          </p>
-          <Button
-            className="mt-5 w-fit gap-2"
-            onClick={() => navigate("/dashboard/manage")}
-          >
-            Go to Dashboard <ArrowRight className="w-4 h-4" />
-          </Button>
-        </div>
-      </section>
-
-      {/* Stats Cards */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((s) => (
-            <div
-              key={s.label}
-              className="bg-card border border-border rounded-xl p-5 flex items-center gap-4 hover:border-primary/30 transition-colors"
-            >
-              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                <s.icon className={`w-5 h-5 ${s.color}`} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{s.value}</p>
-                <p className="text-xs text-muted-foreground">{s.label}</p>
-              </div>
+            <div className="group flex gap-5 items-center p-6 rounded-[2rem] bg-card/40 border border-white/5 hover:border-secondary/30 backdrop-blur-xl transition-all shadow-xl">
+                <div className="bg-secondary/10 p-4 rounded-2xl text-secondary group-hover:rotate-12 transition-transform">
+                  <Sparkles className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white uppercase tracking-wider">Design Engine</p>
+                  <p className="text-[11px] text-gray-400 font-medium mt-1">Ready to automate your event assets.</p>
+                </div>
             </div>
-          ))}
-        </div>
-      </section>
 
-      {/* Event Type Cards */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-bold text-foreground">Event Categories</h2>
-            <p className="text-sm text-muted-foreground mt-1">Choose a category to start managing</p>
+            <div className="group flex gap-5 items-center p-6 rounded-[2rem] bg-card/40 border border-white/5 hover:border-green-500/30 backdrop-blur-xl transition-all shadow-xl">
+                <div className="bg-green-500/10 p-4 rounded-2xl text-green-500 group-hover:rotate-12 transition-transform">
+                  <CheckCircle2 className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white uppercase tracking-wider">System Ready</p>
+                  <p className="text-[11px] text-gray-400 font-medium mt-1">All design modules are online and synced.</p>
+                </div>
+            </div>
+        </div>
+
+        {/* Dynamic Tip Bar */}
+        <div className="flex items-center justify-center mb-16 px-8 py-4 bg-white/5 rounded-3xl border border-white/5">
+            <Sparkles className="h-4 w-4 text-primary/50 mr-3" />
+            <p className="text-[12px] text-gray-400 font-bold italic text-center animate-pulse">
+                "{randomTip}"
+            </p>
+        </div>
+
+        {/* Categories Section */}
+        <section>
+          <div className="flex items-end justify-between mb-10">
+            <div>
+              <h2 className="text-3xl font-black tracking-tight text-white uppercase tracking-widest">Categories</h2>
+              <p className="text-muted-foreground mt-2 font-medium">Select a category to start managing participants.</p>
+            </div>
+            <Badge variant="outline" className="hidden sm:flex items-center gap-2 px-4 py-2 border-white/10 text-[10px] text-gray-400 font-black tracking-widest">
+              <Activity className="w-3 h-3 text-primary" />
+
+            </Badge>
           </div>
-          <Badge variant="secondary" className="hidden sm:flex">
-            3 categories
-          </Badge>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {eventCards.map((card) => (
-            <button
-              key={card.key}
-              onClick={() => handleCardClick(card.key)}
-              className={`group relative bg-gradient-to-br ${card.gradient} border ${card.border} rounded-2xl p-6 text-left transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/10`}
-            >
-              <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center mb-4 group-hover:bg-muted transition-colors">
-                <card.icon className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">{card.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{card.description}</p>
-              <ArrowRight className="absolute bottom-6 right-6 w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" />
-            </button>
-          ))}
-        </div>
-      </section>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {eventCards.map((card) => (
+              <button
+                key={card.key}
+                onClick={() => navigate(`/dashboard/manage?type=${card.key}`)}
+                className={`group relative bg-gradient-to-br ${card.gradient} border ${card.border} rounded-[2.5rem] p-10 text-left transition-all duration-500 hover:-translate-y-4 hover:shadow-2xl`}
+              >
+                <div className="w-16 h-16 rounded-2xl bg-[#0f0a1f]/60 backdrop-blur-md flex items-center justify-center mb-8 border border-white/10 group-hover:scale-110 group-hover:border-primary/50 transition-all shadow-xl">
+                  <card.icon className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="text-2xl font-black mb-4 text-white group-hover:text-primary transition-colors">{card.title}</h3>
+                <p className="text-sm text-gray-400 leading-relaxed font-medium mb-8">{card.description}</p>
+                <div className="inline-flex items-center gap-3 text-[10px] font-black text-primary tracking-widest opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-3">
+                  MANAGE NOW <ArrowRight className="w-4 h-4" />
+                </div>
+              </button>
+            ))}
+            
+          </div>
+        </section>
+       
+      </main>
     </div>
   );
 };
