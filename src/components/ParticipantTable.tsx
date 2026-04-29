@@ -1,13 +1,9 @@
 import { useState } from "react";
-<<<<<<< HEAD
-import { Plus, Search, UserPlus, FileDown } from "lucide-react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { cn } from "@/lib/utils";
-=======
-import { Plus, Download, Upload } from "lucide-react";
-import * as XLSX from "xlsx";
+import { Plus, Search, UserPlus, Upload, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import * as XLSX from "xlsx";
 import {
   Table,
   TableBody,
@@ -17,23 +13,22 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
->>>>>>> 7919ea2a722e03c142fd0417766f07bc28a08ba7
 
 // 1. Participant ki definition
 export interface Participant {
   id: string;
-<<<<<<< HEAD
   name: string;
   email: string;
   phone?: string;
-  status: string;
-  category: string;
+  status?: string;
+  category?: string;
+  [key: string]: any; // For dynamic columns from import
 }
 
-// 2. Props Interface (Yahan event_id add karna zaroori tha)
+// 2. Props Interface
 interface Props {
   title: string;
-  event_id: string; // 🔥 Yeh line add ki hai taake ParticipantManagement ka error khatam ho
+  event_id: string; 
   participants: Participant[];
   onUpdate: (participants: Participant[]) => void;
   isTechEvent?: boolean;
@@ -42,7 +37,7 @@ interface Props {
 
 const ParticipantTable = ({ 
   title, 
-  event_id, // 🔥 Component mein receive kiya
+  event_id, 
   participants, 
   onUpdate, 
   isTechEvent,
@@ -52,60 +47,41 @@ const ParticipantTable = ({
 
   // Search logic
   const filteredParticipants = participants.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (p.name?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+    (p.email?.toLowerCase() || "").includes(searchTerm.toLowerCase())
   );
-=======
-  [key: string]: any;
-}
 
-const ParticipantTable = ({ title, participants, onUpdate }: any) => {
+  // Dynamic columns for the table (excluding 'id')
+  const columns = Array.from(
+    new Set(
+      participants.flatMap((p) =>
+        Object.keys(p).filter((k) => k !== "id")
+      )
+    )
+  );
 
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    organization: "",
-  });
-
-  const handleAdd = () => {
-    const newP = { id: crypto.randomUUID(), ...form };
-    onUpdate([...participants, newP]);
-    toast.success("Added successfully");
-  };
-
-  // 🔥 IMPORT WITH VALIDATION (FIXED)
+  // --- IMPORT LOGIC ---
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
-
     reader.onload = (evt) => {
       try {
-        const wb = XLSX.read(evt.target?.result, { type: "binary" });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json<Record<string, any>>(ws);
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: "binary" });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json<Record<string, any>>(ws);
 
         const errors: string[] = [];
-
-        const imported = rows.map((r: any, index: number) => {
+        const imported = data.map((r, index) => {
           const name = r.Name || r.name || r["Full Name"] || "";
           const email = r.Email || r.email || "";
           const phone = r.Phone || r.phone || "";
 
-          // ✅ VALIDATIONS (NOT REMOVED, ONLY ADDED BACK)
-          if (!name || name.length < 3) {
-            errors.push(`Row ${index + 1}: Invalid Name`);
-          }
-
-          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            errors.push(`Row ${index + 1}: Invalid Email`);
-          }
-
-          if (!/^\d{11}$/.test(phone)) {
-            errors.push(`Row ${index + 1}: Invalid Phone`);
-          }
+          if (!name || name.length < 3) errors.push(`Row ${index + 1}: Invalid Name`);
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push(`Row ${index + 1}: Invalid Email`);
 
           return {
             id: crypto.randomUUID(),
@@ -113,7 +89,6 @@ const ParticipantTable = ({ title, participants, onUpdate }: any) => {
           };
         });
 
-        // ❌ STOP IMPORT IF ERROR
         if (errors.length > 0) {
           toast.error(errors[0]);
           return;
@@ -121,44 +96,31 @@ const ParticipantTable = ({ title, participants, onUpdate }: any) => {
 
         onUpdate([...participants, ...imported]);
         toast.success("Imported successfully");
-      } catch {
+      } catch (err) {
         toast.error("Import failed");
       }
     };
-
     reader.readAsBinaryString(file);
     e.target.value = "";
   };
 
+  // --- EXPORT LOGIC ---
   const handleExport = () => {
-    const csv = [
-      Object.keys(participants[0] || {}).join(","),
-      ...participants.map((p: any) => Object.values(p).join(",")),
-    ].join("\n");
-
-    const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `${title}.csv`;
-    a.click();
-
-    toast.success("Exported");
+    if (participants.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+    const ws = XLSX.utils.json_to_sheet(participants);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Participants");
+    XLSX.writeFile(wb, `${title}.xlsx`);
+    toast.success("Exported successfully");
   };
->>>>>>> 7919ea2a722e03c142fd0417766f07bc28a08ba7
-
-  // ✅ UNIQUE COLUMNS (UNCHANGED)
-  const columns = Array.from(
-    new Set(
-      participants.flatMap((p: any) =>
-        Object.keys(p).filter((k) => k !== "id")
-      )
-    )
-  );
 
   return (
-<<<<<<< HEAD
-    <div className="bg-card rounded-xl border border-border overflow-hidden">
-      <div className="p-4 border-b border-border bg-muted/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-4 bg-card p-4 rounded-xl border border-border">
+      {/* HEADER SECTION */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h3 className="font-bold text-lg flex items-center gap-2">
             {title}
@@ -173,103 +135,73 @@ const ParticipantTable = ({ title, participants, onUpdate }: any) => {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search..."
-              className="pl-9 h-9 w-[200px] lg:w-[300px]"
+              className="pl-9 h-9 w-[200px]"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-=======
-    <div className="space-y-4">
-
-      {/* HEADER */}
-      <div className="flex justify-between">
-        <h2 className="text-xl font-bold">{title}</h2>
-
-        <div className="flex gap-2">
-          <Button size="sm" onClick={handleAdd}>
-            <Plus className="h-4 w-4 mr-1" /> Add
-          </Button>
-
+          </div>
+          
           <div className="relative">
             <input
               type="file"
               accept=".xlsx,.xls,.csv"
               onChange={handleImport}
-              className="absolute inset-0 opacity-0"
+              className="absolute inset-0 opacity-0 cursor-pointer"
             />
             <Button size="sm" variant="outline">
-              <Upload className="h-4 w-4 mr-1" /> Import File
+              <Upload className="h-4 w-4 mr-1" /> Import
             </Button>
->>>>>>> 7919ea2a722e03c142fd0417766f07bc28a08ba7
           </div>
-          <Button size="sm" variant="outline" className="gap-2 border-primary/20 text-primary">
+
+          <Button size="sm" variant="outline" onClick={handleExport}>
+            <Download className="h-4 w-4 mr-1" /> Export
+          </Button>
+
+          <Button size="sm" className="gap-2">
             <UserPlus className="h-4 w-4" /> Add
           </Button>
         </div>
       </div>
 
-<<<<<<< HEAD
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="bg-muted/50 text-muted-foreground font-medium border-b border-border">
-            <tr>
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Email</th>
-              {isTechEvent && <th className="px-4 py-3">Phone</th>}
-              <th className="px-4 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {filteredParticipants.length > 0 ? (
-              filteredParticipants.map((p) => (
-                <tr key={p.id} className="hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3 font-medium">{p.name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{p.email}</td>
-                  {isTechEvent && <td className="px-4 py-3">{p.phone || "-"}</td>}
-                  <td className="px-4 py-3 text-right">
-                    <Button variant="ghost" size="sm">Edit</Button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground italic">
-                  No participants added to {title} yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-=======
-      {/* TABLE */}
-      <div className="border rounded-lg overflow-x-auto">
+      {/* TABLE SECTION */}
+      <div className="border rounded-lg overflow-hidden">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-muted/50">
             <TableRow>
-              <TableHead>#</TableHead>
-
-              {columns.map((col) => (
-                <TableHead key={col}>
-                  {col.charAt(0).toUpperCase() + col.slice(1)}
-                </TableHead>
-              ))}
+              <TableHead className="w-[50px]">#</TableHead>
+              {columns.length > 0 ? (
+                columns.map((col) => (
+                  <TableHead key={col} className="capitalize">
+                    {col.replace(/_/g, ' ')}
+                  </TableHead>
+                ))
+              ) : (
+                <>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                </>
+              )}
             </TableRow>
           </TableHeader>
-
           <TableBody>
-            {participants.map((p: any, i: number) => (
-              <TableRow key={p.id}>
-                <TableCell>{i + 1}</TableCell>
-
-                {columns.map((col) => (
-                  <TableCell key={col}>
-                    {p[col]}
-                  </TableCell>
-                ))}
+            {filteredParticipants.length > 0 ? (
+              filteredParticipants.map((p, i) => (
+                <TableRow key={p.id}>
+                  <TableCell>{i + 1}</TableCell>
+                  {columns.map((col) => (
+                    <TableCell key={col}>{p[col] || "-"}</TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length + 1} className="text-center py-8 text-muted-foreground">
+                  No participants found.
+                </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
->>>>>>> 7919ea2a722e03c142fd0417766f07bc28a08ba7
       </div>
     </div>
   );
