@@ -76,7 +76,8 @@ const EventCreationForm = ({ onClose, onSubmit }: Props) => {
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
           <h2 className="text-xl font-semibold text-foreground">Create New Event</h2>
-          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground"
+          aria-label="Close dialog">
             <X className="w-5 h-5" />
           </button>
         </div>
