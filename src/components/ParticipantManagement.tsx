@@ -53,12 +53,16 @@ const ParticipantManagement = ({ eventType, eventData }: Props) => {
   const isTech = eventType === "tech" || eventData.type === "tech";
   const [activeDay, setActiveDay] = useState(1);
   const [data, setData] = useState<Record<string, Record<string, Participant[]>>>({});
-  const [customLists, setCustomLists] = useState<string[]>([]);
+
+  // ✅ FIX: customLists ab per-day hai — har day ki apni alag lists
+  const [customListsPerDay, setCustomListsPerDay] = useState<Record<string, string[]>>({});
 
   const calculateDayNames = () => {
-    if (!eventData.startDate || !eventData.endDate) return ["Day 1"];
-    const start = new Date(eventData.startDate);
-    const end = new Date(eventData.endDate);
+    const startRaw = eventData.startDate || eventData.start_date;
+    const endRaw = eventData.endDate || eventData.end_date;
+    if (!startRaw || !endRaw) return ["Day 1"];
+    const start = new Date(startRaw);
+    const end = new Date(endRaw);
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const total = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
     return Array.from({ length: total > 0 ? total : 1 }, (_, i) => `Day ${i + 1}`);
@@ -67,6 +71,9 @@ const ParticipantManagement = ({ eventType, eventData }: Props) => {
   const dayNames = calculateDayNames();
   const currentDayName = dayNames[activeDay - 1] || "Day 1";
 
+  // ✅ Current day ki custom lists
+  const currentCustomLists = customListsPerDay[currentDayName] || [];
+
   useEffect(() => {
     const categories = isTech ? techCategories : ["Guest List"];
     const initialData: any = {};
@@ -74,7 +81,7 @@ const ParticipantManagement = ({ eventType, eventData }: Props) => {
       initialData[day] = Object.fromEntries(categories.map((c) => [c, []]));
     });
     setData(initialData);
-  }, [isTech, eventData.startDate, eventData.endDate]);
+  }, [isTech, eventData.startDate, eventData.endDate, eventData.start_date, eventData.end_date]);
 
   const updateCategory = (category: string) => (participants: Participant[]) => {
     setData((prev) => ({
@@ -90,7 +97,13 @@ const ParticipantManagement = ({ eventType, eventData }: Props) => {
     const name = window.prompt("Enter List Name (e.g. VIPs, Speakers):");
     if (name && name.trim()) {
       const listName = name.trim();
-      setCustomLists((prev) => [...prev, listName]);
+
+      // ✅ Sirf current day mein list add hogi
+      setCustomListsPerDay((prev) => ({
+        ...prev,
+        [currentDayName]: [...(prev[currentDayName] || []), listName]
+      }));
+
       setData((prev) => ({
         ...prev,
         [currentDayName]: {
@@ -104,7 +117,7 @@ const ParticipantManagement = ({ eventType, eventData }: Props) => {
   return (
     <div className="space-y-6 p-6 bg-card rounded-2xl border border-border shadow-xl animate-in fade-in duration-500">
 
-      {/* ✅ SINGLE event title — sirf yahan, Index.tsx mein nahi */}
+      {/* Event Title */}
       <div className="mb-2">
         {isEditingName ? (
           <div className="flex items-center gap-2 animate-in slide-in-from-left-2">
@@ -151,21 +164,30 @@ const ParticipantManagement = ({ eventType, eventData }: Props) => {
       {/* Day Selection + Add List */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border pb-4">
         <div className="flex flex-wrap gap-2">
-          {dayNames.map((name, i) => (
-            <Button
-              key={i}
-              variant={activeDay === i + 1 ? "default" : "outline"}
-              onClick={() => setActiveDay(i + 1)}
-              className={cn(
-                "transition-all",
-                activeDay === i + 1
-                  ? "bg-primary text-primary-foreground shadow-lg scale-105"
-                  : "hover:border-primary/50"
-              )}
-            >
-              {name}
-            </Button>
-          ))}
+          {dayNames.map((name, i) => {
+            const venue = eventData?.day_venues?.[i] || eventData?.venue || null;
+            return (
+              <div key={i} className="flex flex-col items-center gap-1">
+                <Button
+                  variant={activeDay === i + 1 ? "default" : "outline"}
+                  onClick={() => setActiveDay(i + 1)}
+                  className={cn(
+                    "transition-all",
+                    activeDay === i + 1
+                      ? "bg-primary text-primary-foreground shadow-lg scale-105"
+                      : "hover:border-primary/50"
+                  )}
+                >
+                  {name}
+                </Button>
+                {venue && (
+                  <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    📍 {venue}
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
         <Button
           variant="outline"
@@ -190,7 +212,8 @@ const ParticipantManagement = ({ eventType, eventData }: Props) => {
           />
         ))}
 
-        {customLists.map((list) => (
+        {/* ✅ Sirf current day ki custom lists dikhao */}
+        {currentCustomLists.map((list) => (
           <ParticipantTable
             key={`${currentDayName}-${list}`}
             title={list}
