@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/lib/supabase";
 import creovatorLogo from "@/assets/creovator-logo.png";
 import heroBg from "@/assets/hero-events.jpg";
@@ -47,7 +47,6 @@ const eventCards = [
   },
 ];
 
-// ✅ Event type colors
 const TYPE_COLORS: Record<string, string> = {
   tech:     "#6366f1",
   party:    "#f9bb1e",
@@ -64,7 +63,6 @@ const TYPE_LABELS: Record<string, string> = {
   others:   "Others",
 };
 
-// ✅ Donut Chart Component — pure SVG, no library needed
 const DonutChart = ({ data }: { data: { type: string; count: number }[] }) => {
   const size = 110;
   const strokeWidth = 18;
@@ -98,14 +96,12 @@ const DonutChart = ({ data }: { data: { type: string; count: number }[] }) => {
 
   return (
     <div className="flex items-center gap-4 w-full">
-      {/* SVG Donut */}
       <div className="relative shrink-0">
         <svg
           width={size} height={size}
           viewBox={`0 0 ${size} ${size}`}
           style={{ transform: "rotate(-90deg)" }}
         >
-          {/* Track */}
           <circle
             cx={size / 2} cy={size / 2} r={radius}
             fill="none" stroke="#ffffff08" strokeWidth={strokeWidth}
@@ -123,14 +119,11 @@ const DonutChart = ({ data }: { data: { type: string; count: number }[] }) => {
             />
           ))}
         </svg>
-        {/* Center label */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-xl font-black text-white">{total}</span>
           <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Events</span>
         </div>
       </div>
-
-      {/* Legend */}
       <div className="flex flex-col gap-1.5 min-w-0">
         {segments.map((seg, i) => (
           <div key={i} className="flex items-center gap-2">
@@ -151,7 +144,7 @@ const DonutChart = ({ data }: { data: { type: string; count: number }[] }) => {
   );
 };
 
-// ✅ Main Landing Component
+// ─── Main Landing Component ───────────────────────────────────────────────────
 const Landing = () => {
   const navigate = useNavigate();
   const [welcomeMsg, setWelcomeMsg] = useState("");
@@ -159,29 +152,55 @@ const Landing = () => {
   const [eventTypeDist, setEventTypeDist] = useState<{ type: string; count: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // ✅ NEW: User profile state
+  const [userInitials, setUserInitials] = useState("??");
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
+  const [userName, setUserName] = useState("");
+
   const fetchStats = async () => {
     try {
       setLoading(true);
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) return;
 
-      // ✅ Supabase se saare events fetch karo aur type wise count karo
+      // ✅ NEW: Fetch profile for avatar + name + initials
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("full_name, avatar_url")
+        .eq("id", user.id)
+        .single();
+
+      const name = profileData?.full_name || user.user_metadata?.full_name || "Organizer";
+      setUserName(name);
+
+      // Build initials from name
+      const initials = name
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+      setUserInitials(initials || "??");
+
+      // Avatar URL — add cache-buster so updated photo shows immediately
+      if (profileData?.avatar_url) {
+        const base = profileData.avatar_url.split("?")[0];
+        setUserAvatarUrl(base + `?t=${Date.now()}`);
+      }
+
+      // ✅ Fetch events for donut chart
       const { data: eventsData, error } = await supabase
-        .from('events')
-        .select('type')
-        .eq('user_id', user.id);
+        .from("events")
+        .select("type")
+        .eq("user_id", user.id);
 
       if (!error && eventsData) {
-        // Group by type
         const counts: Record<string, number> = {};
         eventsData.forEach((e: any) => {
           const t = (e.type || "others").toLowerCase();
           counts[t] = (counts[t] || 0) + 1;
         });
-
-        // Convert to array, only types with count > 0
-        const dist = Object.entries(counts).map(([type, count]) => ({ type, count }));
-        setEventTypeDist(dist);
+        setEventTypeDist(Object.entries(counts).map(([type, count]) => ({ type, count })));
       }
     } catch (err) {
       console.error("DB Error:", err);
@@ -210,6 +229,7 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-[#0f0a1f] text-foreground selection:bg-primary/30">
+
       {/* Navbar */}
       <nav className="sticky top-0 z-50 border-b border-white/5 bg-[#0f0a1f]/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
@@ -232,11 +252,31 @@ const Landing = () => {
               <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#f9bb1e] border-2 border-[#0f0a1f]" />
             </Button>
             <div className="h-8 w-[1px] bg-white/10 mx-1" />
-            <Avatar className="h-9 w-9 border-2 border-primary/20">
-              <AvatarFallback className="bg-gradient-to-br from-[#532062] to-[#2d256d] text-white text-xs font-bold font-serif">
-                LD
-              </AvatarFallback>
-            </Avatar>
+
+            {/* ✅ UPDATED: Clickable Avatar with tooltip */}
+            <div className="relative group/avatar">
+              <button
+                onClick={() => navigate("/profile")}
+                className="rounded-full ring-2 ring-transparent hover:ring-primary/50 transition-all duration-200"
+                title="View Profile"
+              >
+                <Avatar className="h-9 w-9 border-2 border-primary/20">
+                  {userAvatarUrl ? (
+                    <AvatarImage src={userAvatarUrl} alt={userName} className="object-cover" />
+                  ) : null}
+                  <AvatarFallback className="bg-gradient-to-br from-[#532062] to-[#2d256d] text-white text-xs font-bold font-serif">
+                    {userInitials}
+                  </AvatarFallback>
+                </Avatar>
+              </button>
+
+              {/* Tooltip */}
+              <div className="absolute top-full right-0 mt-2 px-3 py-1.5 bg-card border border-white/10 rounded-xl text-xs text-white font-bold whitespace-nowrap opacity-0 group-hover/avatar:opacity-100 transition-all pointer-events-none shadow-xl">
+                {userName || "View Profile"}
+                <div className="absolute -top-1 right-3 w-2 h-2 bg-card border-l border-t border-white/10 rotate-45" />
+              </div>
+            </div>
+
             <Button
               size="sm" variant="ghost"
               className="hidden sm:flex gap-2 text-muted-foreground hover:text-destructive"
@@ -254,7 +294,7 @@ const Landing = () => {
         {/* Welcome */}
         <div className="mb-8">
           <h2 className="text-4xl font-black tracking-tight text-white">
-            {welcomeMsg || "Hello, Organizer"}
+            {welcomeMsg || `Hello, ${userName || "Organizer"}`}
           </h2>
           <p className="text-muted-foreground mt-2 font-medium">
             Your event management pipeline is live and synced.
@@ -288,10 +328,10 @@ const Landing = () => {
           </div>
         </section>
 
-        {/* ✅ Priority Panel — 1st card ab Donut Chart hai */}
+        {/* Priority Panel */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
 
-          {/* ✅ Card 1 — Event Types Donut Chart */}
+          {/* Card 1 — Event Distribution */}
           <div
             className="group flex flex-col gap-3 p-6 rounded-[2rem] bg-card/40 border border-white/5 hover:border-primary/30 backdrop-blur-xl transition-all shadow-xl cursor-pointer"
             onClick={() => navigate('/dashboard/manage')}
@@ -304,7 +344,6 @@ const Landing = () => {
                 Event Distribution
               </p>
             </div>
-
             {loading ? (
               <div className="flex items-center gap-2 py-4">
                 <div className="w-2 h-2 rounded-full bg-primary animate-bounce" />
@@ -316,14 +355,14 @@ const Landing = () => {
             )}
           </div>
 
-          {/* Card 2 — Design Engine */}
+          {/* Card 2 — Smart Features */}
           <div className="group flex gap-5 items-center p-6 rounded-[2rem] bg-card/40 border border-white/5 hover:border-secondary/30 backdrop-blur-xl transition-all shadow-xl">
             <div className="bg-secondary/10 p-4 rounded-2xl text-secondary group-hover:rotate-12 transition-transform">
               <Sparkles className="h-6 w-6" />
             </div>
             <div>
               <p className="text-sm font-bold text-white uppercase tracking-wider">Smart Features</p>
-              <p className="text-[11px] text-gray-400 font-medium mt-1">New tools and enhancements are on the way!.</p>
+              <p className="text-[11px] text-gray-400 font-medium mt-1">New tools and enhancements are on the way!</p>
             </div>
           </div>
 
