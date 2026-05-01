@@ -55,7 +55,7 @@ const plans = [
 const team = [
   { 
     name: "Ms. Soomaiya Hamid", 
-    role: "Project Supervisor", 
+    role: "Founder", 
     image: "/team/soomaiya.jpeg",
     description: "A Lecturer in Computer Science and Software Engineering with expertise in computer networks and cybersecurity." 
   },
