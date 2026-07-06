@@ -18,7 +18,6 @@ interface SidebarProps {
   onTypeChange: (type: EventType) => void;
   onCreateEvent: () => void;
   collapsed?: boolean;
-  // My Events dropdown ke liye
   events?: SidebarEvent[];
   onEventClick?: (event: SidebarEvent) => void;
 }
@@ -37,7 +36,7 @@ const DashboardSidebar = ({
     <aside className="w-64 min-h-screen bg-sidebar border-r border-sidebar-border flex flex-col">
       {/* Logo */}
       <div className="p-5 border-b border-sidebar-border">
-        <img src={creovatorLogo} alt="Creovator" className="h-10 object-contain" />
+        <img src={creovatorLogo} alt="Creovator" className="h-14 w-auto object-contain" />
       </div>
 
       {/* Create Event Button */}
@@ -70,7 +69,7 @@ const DashboardSidebar = ({
           )}
         </button>
 
-        {/* Events List — history style */}
+        {/* Events List */}
         {myEventsExpanded && (
           <ul className="mt-1 space-y-0.5 pl-2">
             {events.length > 0 ? (

@@ -19,22 +19,10 @@ const navLinks = ["Home", "Features", "How It Works", "Pricing", "Developers"];
 
 const features = [
   { icon: Sparkles, title: "Smart Event Creation", desc: "AI-powered event setup with intelligent suggestions and templates." },
-  { 
-    icon: Layers3, // Multiple layers represent Bulk Generation of assets
-    title: "Bulk Material Generation", 
-    desc: "Generate hundreds of personalized designing materials and event assets in seconds." 
-  },
+  { icon: Layers3, title: "Bulk Material Generation", desc: "Generate hundreds of personalized designing materials and event assets in seconds." },
   { icon: Mail, title: "Email Automation", desc: "Automated emails for invitations (Badges and Tickets), reminders, propsals , follow-ups and Certificates." },
-  { 
-    icon: MonitorSmartphone, // Devices representing Live Monitoring and presence tracking
-    title: "Unified Live Presence Monitor", 
-    desc: "Real-time tracking of participants, judges, guests, exhibitors, and visitors through  check-in system." 
-  },
-  { 
-    icon: Stamp, // Represents creation of official certificates/badges for Brand Collateral
-    title: "Collateral Forge", 
-    desc: "Auto-craft professional-grade certificates, badges, and marketing assets that align perfectly with your event's identity." 
-  },
+  { icon: MonitorSmartphone, title: "Unified Live Presence Monitor", desc: "Real-time tracking of participants, judges, guests, exhibitors, and visitors through check-in system." },
+  { icon: Stamp, title: "Collateral Forge", desc: "Auto-craft professional-grade certificates, badges, and marketing assets that align perfectly with your event's identity." },
   { icon: BarChart3, title: "Analytics Dashboard", desc: "Real-time insights on attendance, engagement, feedback, reviews and much more." },
 ];
 
@@ -42,8 +30,8 @@ const steps = [
   { num: "01", title: "Sign Up", desc: "Create your Creovator account in seconds." },
   { num: "02", title: "Choose Subscription", desc: "Pick a plan that fits your event needs." },
   { num: "03", title: "Create Event", desc: "Set up your event with our intuitive builder." },
-  { num: "04", title: "Manage Events", desc: "Complete end-to-end management from planning to execution." }, 
-  { num: "05", title: "Design Materials", desc: "Auto-generate beautiful certificates and promotional materials." }, 
+  { num: "04", title: "Manage Events", desc: "Complete end-to-end management from planning to execution." },
+  { num: "05", title: "Design Materials", desc: "Auto-generate beautiful certificates and promotional materials." },
 ];
 
 const plans = [
@@ -53,36 +41,11 @@ const plans = [
 ];
 
 const team = [
-  { 
-    name: "Ms. Soomaiya Hamid", 
-    role: "Founder", 
-    image: "/team/soomaiya.jpeg",
-    description: "A Lecturer in Computer Science and Software Engineering with expertise in computer networks and cybersecurity." 
-  },
-  { 
-    name: "Maya Khurshid Anwar", 
-    role: "Lead & AI Automation Engineer", 
-    image: "/team/maya.jpeg",
-    description: "A Final Year Software Engineering Student from Jinnah University for Women."
-  },
-  { 
-    name: "Laiba Danish", 
-    role: "Backend Engineer", 
-    image: "/team/laiba.jpeg",
-    description: "A Final Year Software Engineering Student from Jinnah University for Women."
-  },
-  { 
-    name: "Imsha Anmol", 
-    role: "UI/UX Designer", 
-    image: "/team/imsha.jpeg",
-    description: "A Final Year Software Engineering Student from Jinnah University for Women."
-  },
-  { 
-    name: "Alishba Iftikhar", 
-    role: "Frontend Developer", 
-    image: "/team/alishba.jpeg",
-    description: "A Final Year Software Engineering Student from Jinnah University for Women."
-  },
+  { name: "Ms. Soomaiya Hamid", role: "Founder", image: "/team/soomaiya.jpeg", description: "A Lecturer in Computer Science and Software Engineering with expertise in computer networks and cybersecurity." },
+  { name: "Maya Khurshid Anwar", role: "Lead & AI Automation Engineer", image: "/team/maya.jpeg", description: "A Final Year Software Engineering Student from Jinnah University for Women." },
+  { name: "Laiba Danish", role: "Backend Engineer", image: "/team/laiba.jpeg", description: "A Final Year Software Engineering Student from Jinnah University for Women." },
+  { name: "Imsha Anmol", role: "UI/UX Designer", image: "/team/imsha.jpeg", description: "A Final Year Software Engineering Student from Jinnah University for Women." },
+  { name: "Alishba Iftikhar", role: "Frontend Developer", image: "/team/alishba.jpeg", description: "A Final Year Software Engineering Student from Jinnah University for Women." },
 ];
 
 const SectionDivider = () => (
@@ -195,7 +158,7 @@ const SaasLanding = () => {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-[100] border-b border-border/20 bg-background/60 backdrop-blur-md">
         <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-          <img src={creovatorLogo} alt="Creovator" className="h-9 object-contain" />
+          <img src={creovatorLogo} alt="Creovator" className="w-36 h-auto object-contain" />
           <nav className="hidden md:flex items-center gap-6">
             {navLinks.map((l) => (
               <a key={l} href={`#${l.toLowerCase().replace(/ /g, "-")}`} className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">
@@ -220,9 +183,7 @@ const SaasLanding = () => {
           </Badge>
           <h1 className="text-5xl md:text-7xl font-bold mb-8 text-white leading-tight">
             Organize Smart Events <br />
-            <span className="heading-gradient italic">
-              with AI Automation
-            </span>
+            <span className="heading-gradient italic">with AI Automation</span>
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-12">
             Empowering organizers with AI to transform complex event planning into automated, high-impact experiences.
@@ -351,24 +312,14 @@ const SaasLanding = () => {
             {plans.map((p, i) => (
               <motion.div
                 key={i}
-                whileHover={{ 
-                  scale: p.highlighted ? 1.05 : 1.02, 
-                  zIndex: 30,
-                  transition: { duration: 0.3 }
-                }}
+                whileHover={{ scale: p.highlighted ? 1.05 : 1.02, zIndex: 30, transition: { duration: 0.3 } }}
                 className={`relative w-full max-w-[350px] transition-all duration-500 flex flex-col ${
-                  p.highlighted 
-                    ? "z-20 h-[560px] md:-mx-4 shadow-[0_0_50px_rgba(59,130,246,0.25)]" 
-                    : "z-10 h-[500px] opacity-95"
+                  p.highlighted ? "z-20 h-[560px] md:-mx-4 shadow-[0_0_50px_rgba(59,130,246,0.25)]" : "z-10 h-[500px] opacity-95"
                 }`}
               >
-                <div className={`
-                  h-full w-full flex flex-col rounded-[2.5rem] p-8 border backdrop-blur-xl
-                  ${p.highlighted 
-                    ? "bg-gradient-to-b from-primary/30 to-primary/10 border-primary/40 text-white" 
-                    : "bg-white border-white/20 text-primary shadow-2xl"
-                  }
-                `}>
+                <div className={`h-full w-full flex flex-col rounded-[2.5rem] p-8 border backdrop-blur-xl ${
+                  p.highlighted ? "bg-gradient-to-b from-primary/30 to-primary/10 border-primary/40 text-white" : "bg-white border-white/20 text-primary shadow-2xl"
+                }`}>
                   <div className="mb-6">
                     <Badge className={`mb-4 border-none px-3 py-1 ${p.highlighted ? "bg-white/20 text-white" : "bg-primary/10 text-primary"}`}>
                       {p.name.toUpperCase()} PLAN
@@ -381,7 +332,6 @@ const SaasLanding = () => {
                       Best for {p.name === "Pro" ? "growing teams" : p.name === "Basic" ? "individuals" : "large enterprises"}.
                     </p>
                   </div>
-
                   <div className="flex-grow space-y-4 mb-8">
                     {p.features.map((feat) => (
                       <div key={feat} className="flex items-center gap-3">
@@ -392,15 +342,9 @@ const SaasLanding = () => {
                       </div>
                     ))}
                   </div>
-
-                  <Button 
-                    onClick={goAuth}
-                    className={`w-full h-12 rounded-2xl text-sm font-bold transition-all duration-300 ${
-                      p.highlighted 
-                        ? "bg-white text-primary hover:bg-white/90 shadow-xl" 
-                        : "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
-                    }`}
-                  >
+                  <Button onClick={goAuth} className={`w-full h-12 rounded-2xl text-sm font-bold transition-all duration-300 ${
+                    p.highlighted ? "bg-white text-primary hover:bg-white/90 shadow-xl" : "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
+                  }`}>
                     Click here to get started! <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
@@ -416,14 +360,12 @@ const SaasLanding = () => {
       <section id="developers" className="py-24 px-4 bg-background relative overflow-hidden">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-20">
-              {/* <Badge variant="outline" className="mb-4 border-primary/30 text-primary px-4 py-1">Our Experts</Badge> */}
               <div className="heading-with-border">
                 <h2 className="text-4xl md:text-5xl font-bold tracking-tight">
                     <span className="heading-gradient">Meet Our Team</span>
                 </h2>
               </div>
           </div>
-          
           <div className="space-y-24">
             {team.map((m, i) => (
               <motion.div 
@@ -434,54 +376,27 @@ const SaasLanding = () => {
                 transition={{ duration: 0.6, delay: i * 0.1 }}
                 className={`flex flex-col md:flex-row items-center gap-8 md:gap-16 ${i % 2 !== 0 ? "md:flex-row-reverse" : ""}`}
               >
-                {/* Profile Image */}
                 <div className="relative group flex-shrink-0">
                   <div className="absolute -inset-4 bg-primary/20 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                   <div className="relative w-40 h-40 md:w-56 md:h-56 rounded-full overflow-hidden border-4 border-white/5 group-hover:border-primary/50 transition-all duration-500 shadow-2xl">
-                    <img 
-                      src={m.image} 
-                      alt={m.name} 
-                      className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110" 
-                      onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${m.name}&background=0D8ABC&color=fff&size=512`; }}
-                    />
+                    <img src={m.image} alt={m.name} className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110" 
+                      onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${m.name}&background=0D8ABC&color=fff&size=512`; }} />
                   </div>
                 </div>
-
-                {/* Content - Snake Border Message Box */}
                 <div className="relative flex-grow w-full max-w-2xl">
                     <div className="snake-border-container">
-                     <div className={`
-                       relative p-8 md:p-10 rounded-[2rem] bg-black/80 backdrop-blur-xl transition-all duration-300
-                       ${i % 2 !== 0 ? "text-center md:text-right" : "text-center md:text-left"}
-                     `}>
-                       {/* Box Background Glow */}
+                     <div className={`relative p-8 md:p-10 rounded-[2rem] bg-black/80 backdrop-blur-xl transition-all duration-300 ${i % 2 !== 0 ? "text-center md:text-right" : "text-center md:text-left"}`}>
                        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent rounded-[2rem] -z-10" />
-                       
-                       <h4 className="text-3xl font-bold text-white mb-2 group-hover:text-primary transition-colors">{m.name}</h4>
+                       <h4 className="text-3xl font-bold text-white mb-2">{m.name}</h4>
                        <div className={`flex items-center gap-2 mb-2 justify-center ${i % 2 !== 0 ? "md:justify-end" : "md:justify-start"}`}>
-                         <Badge variant="secondary" className="bg-primary/10 text-primary border-none text-[10px] tracking-widest uppercase py-0.5 px-2">
-                           {m.role}
-                         </Badge>
+                         <Badge variant="secondary" className="bg-primary/10 text-primary border-none text-[10px] tracking-widest uppercase py-0.5 px-2">{m.role}</Badge>
                        </div>
-
-                       <p className={`text-sm text-white/70 mb-6 italic ${i % 2 !== 0 ? "md:text-right" : "md:text-left"}`}>
-                         {m.description}
-                       </p>
-
-                       {/* SOCIAL ICONS WITH NEON EFFECT */}
+                       <p className={`text-sm text-white/70 mb-6 italic ${i % 2 !== 0 ? "md:text-right" : "md:text-left"}`}>{m.description}</p>
                        <div className={`flex items-center gap-6 justify-center ${i % 2 !== 0 ? "md:justify-end" : "md:justify-start"}`}>
-                         <a href="#" className="text-white/50 transition-all duration-300 neon-icon-hover">
-                           <Twitter className="w-6 h-6" />
-                         </a>
-                         <a href="#" className="text-white/50 transition-all duration-300 neon-icon-hover">
-                           <Github className="w-6 h-6" />
-                         </a>
-                         <a href="#" className="text-white/50 transition-all duration-300 neon-icon-hover">
-                           <Linkedin className="w-6 h-6" />
-                         </a>
+                         <a href="#" className="text-white/50 transition-all duration-300 neon-icon-hover"><Twitter className="w-6 h-6" /></a>
+                         <a href="#" className="text-white/50 transition-all duration-300 neon-icon-hover"><Github className="w-6 h-6" /></a>
+                         <a href="#" className="text-white/50 transition-all duration-300 neon-icon-hover"><Linkedin className="w-6 h-6" /></a>
                        </div>
-
-                       {/* Box Corner Accent */}
                        <div className={`absolute bottom-6 w-12 h-1 bg-primary/40 rounded-full ${i % 2 !== 0 ? "right-10" : "left-10"}`} />
                      </div>
                     </div>
@@ -498,7 +413,7 @@ const SaasLanding = () => {
       <footer className="border-t border-border/30 py-16 px-4 sm:px-6 lg:px-8 bg-muted/5">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           <div className="space-y-4">
-            <img src={creovatorLogo} alt="Creovator" className="h-10 object-contain" />
+            <img src={creovatorLogo} alt="Creovator" className="w-40 h-auto object-contain" />
             <p className="text-muted-foreground text-sm">Leading the future of event management with AI.</p>
           </div>
           <div>

@@ -66,8 +66,7 @@ const AddListModal = ({ onConfirm, onCancel, isAdding }: {
       <div className="bg-card border border-border rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 animate-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-[#F9BB1E]">Add Custom List</h2>
-          <button onClick={onCancel} className="p-1.5 rounded-lg hover:bg-muted/50 text-muted-foreground"className="p-1.5 rounded-lg hover:bg-muted/50 text-muted-foreground"
-  title="Close"><X className="h-4 w-4" /></button>
+          <button onClick={onCancel} className="p-1.5 rounded-lg hover:bg-muted/50 text-muted-foreground" title="Close"><X className="h-4 w-4" /></button>
         </div>
         <div className="flex flex-col gap-1 mb-4">
           <input

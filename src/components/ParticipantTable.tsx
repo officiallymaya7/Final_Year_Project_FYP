@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Search, UserPlus, FileDown, Upload, Pencil, Trash2, AlertTriangle, X, Check, Loader2, ChevronDown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Search, UserPlus, FileDown, Upload, Pencil, Trash2, AlertTriangle, X, Check, Loader2, ChevronDown, Award, CreditCard } from "lucide-react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,26 +49,16 @@ const countryCodes = [
 
 // ─── Phone Input with Country Code ───────────────────────────────────────────
 const PhoneInput = ({
-  value,
-  countryCode,
-  onPhoneChange,
-  onCountryChange,
-  hasError,
-  placeholder,
+  value, countryCode, onPhoneChange, onCountryChange, hasError, placeholder,
 }: {
-  value: string;
-  countryCode: string;
-  onPhoneChange: (v: string) => void;
-  onCountryChange: (v: string) => void;
-  hasError?: boolean;
-  placeholder?: string;
+  value: string; countryCode: string; onPhoneChange: (v: string) => void;
+  onCountryChange: (v: string) => void; hasError?: boolean; placeholder?: string;
 }) => {
   const [open, setOpen] = useState(false);
   const selected = countryCodes.find(c => c.code === countryCode) || countryCodes[0];
 
   return (
     <div className={`flex rounded-lg border ${hasError ? "border-destructive" : "border-border"} bg-background overflow-hidden focus-within:border-primary transition-colors`}>
-      {/* Country picker */}
       <div className="relative">
         <button
           type="button"
@@ -95,7 +86,6 @@ const PhoneInput = ({
           </div>
         )}
       </div>
-      {/* Phone number input */}
       <input
         type="tel"
         value={value}
@@ -108,7 +98,7 @@ const PhoneInput = ({
   );
 };
 
-// ─── Delete Confirmation Modal ───────────────────────────────────────────────
+// ─── Delete Confirmation Modal ────────────────────────────────────────────────
 const DeleteParticipantModal = ({
   name, onConfirm, onCancel, isDeleting,
 }: { name: string; onConfirm: () => void; onCancel: () => void; isDeleting: boolean }) => (
@@ -141,10 +131,8 @@ const DeleteParticipantModal = ({
 const EditParticipantModal = ({
   participant, onSave, onCancel, isSaving,
 }: {
-  participant: Participant;
-  onSave: (updated: Participant) => void;
-  onCancel: () => void;
-  isSaving: boolean;
+  participant: Participant; onSave: (updated: Participant) => void;
+  onCancel: () => void; isSaving: boolean;
 }) => {
   const [form, setForm] = useState({
     name: participant.name || "",
@@ -160,10 +148,8 @@ const EditParticipantModal = ({
     const nameVal = form.name.trim();
     if (!nameVal || nameVal.length < 2) errs.name = "Name must be at least 2 characters";
     if (/^\d+$/.test(nameVal)) errs.name = "Name cannot be only numbers";
-    // Email optional — validate only if filled
     if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
       errs.email = "Invalid email format";
-    // Phone optional — validate only if filled
     if (form.phone && !/^\d{7,15}$/.test(form.phone))
       errs.phone = "Phone must be 7–15 digits";
     setErrors(errs);
@@ -192,53 +178,28 @@ const EditParticipantModal = ({
           </button>
         </div>
         <div className="space-y-3">
-          {/* Name — required */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-muted-foreground">Full Name <span className="text-destructive">*</span></label>
-            <Input
-              value={form.name}
-              onChange={(e) => { setForm(f => ({ ...f, name: e.target.value })); setErrors(er => ({ ...er, name: "" })); }}
-              className={errors.name ? "border-destructive" : ""}
-              placeholder="Full Name"
-            />
+            <Input value={form.name} onChange={(e) => { setForm(f => ({ ...f, name: e.target.value })); setErrors(er => ({ ...er, name: "" })); }}
+              className={errors.name ? "border-destructive" : ""} placeholder="Full Name" />
             {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
           </div>
-
-          {/* Email — optional */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-muted-foreground">Email <span className="text-muted-foreground/60 text-[10px]">(optional)</span></label>
-            <Input
-              type="email"
-              value={form.email}
-              onChange={(e) => { setForm(f => ({ ...f, email: e.target.value })); setErrors(er => ({ ...er, email: "" })); }}
-              className={errors.email ? "border-destructive" : ""}
-              placeholder="email@example.com"
-            />
+            <Input type="email" value={form.email} onChange={(e) => { setForm(f => ({ ...f, email: e.target.value })); setErrors(er => ({ ...er, email: "" })); }}
+              className={errors.email ? "border-destructive" : ""} placeholder="email@example.com" />
             {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
           </div>
-
-          {/* Phone — optional with country code */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-muted-foreground">Phone <span className="text-muted-foreground/60 text-[10px]">(optional)</span></label>
-            <PhoneInput
-              value={form.phone}
-              countryCode={countryCode}
+            <PhoneInput value={form.phone} countryCode={countryCode}
               onPhoneChange={(v) => { setForm(f => ({ ...f, phone: v })); setErrors(er => ({ ...er, phone: "" })); }}
-              onCountryChange={setCountryCode}
-              hasError={!!errors.phone}
-              placeholder="Phone number"
-            />
+              onCountryChange={setCountryCode} hasError={!!errors.phone} placeholder="Phone number" />
             {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
           </div>
-
-          {/* Organization — optional */}
           <div className="flex flex-col gap-1">
             <label className="text-xs font-medium text-muted-foreground">Organization <span className="text-muted-foreground/60 text-[10px]">(optional)</span></label>
-            <Input
-              value={form.organization}
-              onChange={(e) => setForm(f => ({ ...f, organization: e.target.value }))}
-              placeholder="Organization"
-            />
+            <Input value={form.organization} onChange={(e) => setForm(f => ({ ...f, organization: e.target.value }))} placeholder="Organization" />
           </div>
         </div>
         <div className="flex gap-3 mt-5">
@@ -258,6 +219,7 @@ const EditParticipantModal = ({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const ParticipantTable = ({ title, event_id, day_number, participants, onUpdate, isTechEvent, isCustomEvent }: Props) => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", phone: "", organization: "" });
@@ -302,18 +264,12 @@ const ParticipantTable = ({ title, event_id, day_number, participants, onUpdate,
     );
   });
 
-  // ── Validation ─────────────────────────────────────────────────────────────
-  // Name: required
-  // Email: optional, but if filled → valid format
-  // Phone: optional, but if filled → digits only, 7-15
-  // Organization: optional, no validation
+  // ── Validation ────────────────────────────────────────────────────────────
   const validateForm = () => {
     const errs: Record<string, string> = {};
     const nameVal = form.name.trim();
-    if (!nameVal || nameVal.length < 2)
-      errs.name = "Name must be at least 2 characters";
-    if (/^\d+$/.test(nameVal))
-      errs.name = "Name cannot be only numbers";
+    if (!nameVal || nameVal.length < 2) errs.name = "Name must be at least 2 characters";
+    if (/^\d+$/.test(nameVal)) errs.name = "Name cannot be only numbers";
     if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
       errs.email = "Invalid email format";
     if (form.phone && !/^\d{7,15}$/.test(form.phone))
@@ -329,21 +285,13 @@ const ParticipantTable = ({ title, event_id, day_number, participants, onUpdate,
     try {
       const fullPhone = form.phone ? `${countryCode} ${form.phone}` : undefined;
       const insertData: any = {
-        event_id,
-        day_number,
-        list_name: title,
-        name: form.name.trim(),
+        event_id, day_number, list_name: title, name: form.name.trim(),
       };
       if (form.email.trim()) insertData.email = form.email.trim();
       if (fullPhone) insertData.phone = fullPhone;
       if (form.organization.trim()) insertData.organization = form.organization.trim();
 
-      const { data, error } = await supabase
-        .from('participants')
-        .insert([insertData])
-        .select()
-        .single();
-
+      const { data, error } = await supabase.from('participants').insert([insertData]).select().single();
       if (error) throw error;
 
       onUpdate([...participants, data as Participant]);
@@ -362,15 +310,10 @@ const ParticipantTable = ({ title, event_id, day_number, participants, onUpdate,
   const handleEditSave = async (updated: Participant) => {
     setIsSaving(true);
     try {
-      const { error } = await supabase
-        .from('participants')
-        .update({
-          name: updated.name,
-          email: updated.email ?? null,
-          phone: updated.phone ?? null,
-          organization: updated.organization ?? null,
-        })
-        .eq('id', updated.id);
+      const { error } = await supabase.from('participants').update({
+        name: updated.name, email: updated.email ?? null,
+        phone: updated.phone ?? null, organization: updated.organization ?? null,
+      }).eq('id', updated.id);
       if (error) throw error;
       onUpdate(participants.map(p => p.id === updated.id ? updated : p));
       toast.success("Participant updated!");
@@ -463,21 +406,16 @@ const ParticipantTable = ({ title, event_id, day_number, participants, onUpdate,
     toast.success("Exported successfully!");
   };
 
-  // ── Columns ───────────────────────────────────────────────────────────────
-  const staticColumns = ["name", "email", "phone", "organization"];
-  const dynamicColumns = Array.from(
-    new Set(
-      participants.flatMap(p =>
-        Object.keys(p).filter(k => !["id", "event_id", "day_number", "list_name", "created_at"].includes(k))
-      )
-    )
-  );
-  const displayColumns = dynamicColumns.length > 0
-    ? dynamicColumns.filter(c => staticColumns.includes(c)) // keep consistent order
-    : staticColumns;
+  // ── Navigation helpers ────────────────────────────────────────────────────
+  const goToCertificates = () => {
+    navigate(
+      `/dashboard/certificates?event_id=${event_id}&list_name=${encodeURIComponent(title)}&day_number=${day_number}`
+    );
+  };
 
-  // Always show these 4 columns as headers (even if empty)
-  const tableColumns = staticColumns;
+  const goToIdCards = () => {
+    navigate(`/dashboard/id-cards?event_id=${event_id}&list_name=${encodeURIComponent(title)}&day_number=${day_number}`)
+  };
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -506,67 +444,65 @@ const ParticipantTable = ({ title, event_id, day_number, participants, onUpdate,
           <Button size="sm" variant="outline" className="gap-2" onClick={handleExport}>
             <FileDown className="h-4 w-4" /> Export
           </Button>
+
+          {/* ── Certificates Button ── */}
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2 border-[#F9BB1E]/50 text-[#F9BB1E] hover:bg-[#F9BB1E]/10"
+            disabled={participants.length === 0}
+            onClick={goToCertificates}
+            title="Create certificates for this list"
+          >
+            <Award className="h-4 w-4" /> Certificates
+          </Button>
+
+          {/* ── ID Cards Button ── */}
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2 border-violet-400/50 text-violet-400 hover:bg-violet-400/10"
+            disabled={participants.length === 0}
+            onClick={goToIdCards}
+            title="Create ID cards for this list"
+          >
+            <CreditCard className="h-4 w-4" /> ID Cards
+          </Button>
         </div>
       </div>
 
       {/* ── Add Form ── */}
       <div className="p-4 border-b border-border bg-muted/10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* Name — required */}
           <div className="flex flex-col gap-1">
-            <Input
-              placeholder="Full Name *"
-              value={form.name}
+            <Input placeholder="Full Name *" value={form.name}
               onChange={(e) => { setForm(f => ({ ...f, name: e.target.value })); setFormErrors(er => ({ ...er, name: "" })); }}
               className={formErrors.name ? "border-destructive" : ""}
-              onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-            />
+              onKeyDown={(e) => e.key === 'Enter' && handleAdd()} />
             {formErrors.name && <p className="text-xs text-destructive">{formErrors.name}</p>}
           </div>
-
-          {/* Email — optional */}
           <div className="flex flex-col gap-1">
-            <Input
-              placeholder="Email (optional)"
-              type="email"
-              value={form.email}
+            <Input placeholder="Email (optional)" type="email" value={form.email}
               onChange={(e) => { setForm(f => ({ ...f, email: e.target.value })); setFormErrors(er => ({ ...er, email: "" })); }}
               className={formErrors.email ? "border-destructive" : ""}
-              onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-            />
+              onKeyDown={(e) => e.key === 'Enter' && handleAdd()} />
             {formErrors.email && <p className="text-xs text-destructive">{formErrors.email}</p>}
           </div>
-
-          {/* Phone — optional with country code */}
           <div className="flex flex-col gap-1">
-            <PhoneInput
-              value={form.phone}
-              countryCode={countryCode}
+            <PhoneInput value={form.phone} countryCode={countryCode}
               onPhoneChange={(v) => { setForm(f => ({ ...f, phone: v })); setFormErrors(er => ({ ...er, phone: "" })); }}
-              onCountryChange={setCountryCode}
-              hasError={!!formErrors.phone}
-              placeholder="Phone (optional)"
-            />
+              onCountryChange={setCountryCode} hasError={!!formErrors.phone} placeholder="Phone (optional)" />
             {formErrors.phone && <p className="text-xs text-destructive">{formErrors.phone}</p>}
           </div>
-
-          {/* Organization — optional */}
           <div className="flex flex-col gap-1">
-            <Input
-              placeholder="Organization (optional)"
-              value={form.organization}
+            <Input placeholder="Organization (optional)" value={form.organization}
               onChange={(e) => setForm(f => ({ ...f, organization: e.target.value }))}
-              onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-            />
+              onKeyDown={(e) => e.key === 'Enter' && handleAdd()} />
           </div>
         </div>
-
-        {/* Add Button */}
         <div className="mt-3 flex justify-end">
           <Button size="sm" className="h-9 gap-2 px-6" onClick={handleAdd} disabled={isAdding}>
-            {isAdding
-              ? <><Loader2 className="h-4 w-4 animate-spin" /> Adding...</>
-              : <><UserPlus className="h-4 w-4" /> Add</>}
+            {isAdding ? <><Loader2 className="h-4 w-4 animate-spin" /> Adding...</> : <><UserPlus className="h-4 w-4" /> Add</>}
           </Button>
         </div>
       </div>
