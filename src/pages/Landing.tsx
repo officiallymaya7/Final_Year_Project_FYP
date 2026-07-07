@@ -1,15 +1,13 @@
-import { Outlet } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Bell, Monitor, PartyPopper, ArrowRight, Sparkles,
-  LogOut, CheckCircle2, Activity
+  Monitor, PartyPopper, ArrowRight, Sparkles,
+  CheckCircle2, Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/lib/supabase";
-import creovatorLogo from "@/assets/creovator-logo.png";
+import DashboardHeader from "@/components/DashboardHeader";
 import heroBg from "@/assets/hero-events.jpg";
 
 const organizerTips = [
@@ -144,17 +142,12 @@ const DonutChart = ({ data }: { data: { type: string; count: number }[] }) => {
   );
 };
 
-// ─── Main Landing Component ───────────────────────────────────────────────────
 const Landing = () => {
   const navigate = useNavigate();
   const [welcomeMsg, setWelcomeMsg] = useState("");
   const [randomTip, setRandomTip] = useState("");
   const [eventTypeDist, setEventTypeDist] = useState<{ type: string; count: number }[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // ✅ NEW: User profile state
-  const [userInitials, setUserInitials] = useState("??");
-  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null);
   const [userName, setUserName] = useState("");
 
   const fetchStats = async () => {
@@ -163,7 +156,6 @@ const Landing = () => {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) return;
 
-      // ✅ NEW: Fetch profile for avatar + name + initials
       const { data: profileData } = await supabase
         .from("profiles")
         .select("full_name, avatar_url")
@@ -173,22 +165,6 @@ const Landing = () => {
       const name = profileData?.full_name || user.user_metadata?.full_name || "Organizer";
       setUserName(name);
 
-      // Build initials from name
-      const initials = name
-        .split(" ")
-        .map((n: string) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2);
-      setUserInitials(initials || "??");
-
-      // Avatar URL — add cache-buster so updated photo shows immediately
-      if (profileData?.avatar_url) {
-        const base = profileData.avatar_url.split("?")[0];
-        setUserAvatarUrl(base + `?t=${Date.now()}`);
-      }
-
-      // ✅ Fetch events for donut chart
       const { data: eventsData, error } = await supabase
         .from("events")
         .select("type")
@@ -220,78 +196,13 @@ const Landing = () => {
     return () => { localStorage.removeItem("authType"); };
   }, []);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    localStorage.removeItem("user");
-    localStorage.removeItem("authType");
-    navigate("/auth");
-  };
-
   return (
     <div className="min-h-screen bg-[#0f0a1f] text-foreground selection:bg-primary/30">
 
-      {/* Navbar */}
-      <nav className="sticky top-0 z-50 border-b border-white/5 bg-[#0f0a1f]/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-          <img
-            src={creovatorLogo} alt="Creovator"
-            className="h-9 object-contain cursor-pointer"
-            onClick={() => navigate("/")}
-          />
-          <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-muted-foreground">
-            {["Dashboard", "My Events", "Calendar"].map((link) => (
-              <button key={link} className="hover:text-primary transition-all relative group">
-                {link}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-4">
-            <Button size="icon" variant="ghost" className="relative hover:bg-primary/10">
-              <Bell className="w-5 h-5 text-muted-foreground" />
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#f9bb1e] border-2 border-[#0f0a1f]" />
-            </Button>
-            <div className="h-8 w-[1px] bg-white/10 mx-1" />
-
-            {/* ✅ UPDATED: Clickable Avatar with tooltip */}
-            <div className="relative group/avatar">
-              <button
-                onClick={() => navigate("/profile")}
-                className="rounded-full ring-2 ring-transparent hover:ring-primary/50 transition-all duration-200"
-                title="View Profile"
-              >
-                <Avatar className="h-9 w-9 border-2 border-primary/20">
-                  {userAvatarUrl ? (
-                    <AvatarImage src={userAvatarUrl} alt={userName} className="object-cover" />
-                  ) : null}
-                  <AvatarFallback className="bg-gradient-to-br from-[#532062] to-[#2d256d] text-white text-xs font-bold font-serif">
-                    {userInitials}
-                  </AvatarFallback>
-                </Avatar>
-              </button>
-
-              {/* Tooltip */}
-              <div className="absolute top-full right-0 mt-2 px-3 py-1.5 bg-card border border-white/10 rounded-xl text-xs text-white font-bold whitespace-nowrap opacity-0 group-hover/avatar:opacity-100 transition-all pointer-events-none shadow-xl">
-                {userName || "View Profile"}
-                <div className="absolute -top-1 right-3 w-2 h-2 bg-card border-l border-t border-white/10 rotate-45" />
-              </div>
-            </div>
-
-            <Button
-              size="sm" variant="ghost"
-              className="hidden sm:flex gap-2 text-muted-foreground hover:text-destructive"
-              onClick={handleLogout}
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="font-bold uppercase tracking-tighter">Logout</span>
-            </Button>
-          </div>
-        </div>
-      </nav>
+      <DashboardHeader />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
-        {/* Welcome */}
         <div className="mb-8">
           <h2 className="text-4xl font-black tracking-tight text-white">
             {welcomeMsg || `Hello, ${userName || "Organizer"}`}
@@ -301,7 +212,6 @@ const Landing = () => {
           </p>
         </div>
 
-        {/* Hero */}
         <section className="relative w-full rounded-[3rem] overflow-hidden min-h-[420px] shadow-2xl group border border-white/5 mb-8">
           <img
             src={heroBg} alt="Hero"
@@ -328,10 +238,8 @@ const Landing = () => {
           </div>
         </section>
 
-        {/* Priority Panel */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
 
-          {/* Card 1 — Event Distribution */}
           <div
             className="group flex flex-col gap-3 p-6 rounded-[2rem] bg-card/40 border border-white/5 hover:border-primary/30 backdrop-blur-xl transition-all shadow-xl cursor-pointer"
             onClick={() => navigate('/dashboard/manage')}
@@ -355,7 +263,6 @@ const Landing = () => {
             )}
           </div>
 
-          {/* Card 2 — Smart Features */}
           <div className="group flex gap-5 items-center p-6 rounded-[2rem] bg-card/40 border border-white/5 hover:border-secondary/30 backdrop-blur-xl transition-all shadow-xl">
             <div className="bg-secondary/10 p-4 rounded-2xl text-secondary group-hover:rotate-12 transition-transform">
               <Sparkles className="h-6 w-6" />
@@ -366,7 +273,6 @@ const Landing = () => {
             </div>
           </div>
 
-          {/* Card 3 — System Ready */}
           <div className="group flex gap-5 items-center p-6 rounded-[2rem] bg-card/40 border border-white/5 hover:border-green-500/30 backdrop-blur-xl transition-all shadow-xl">
             <div className="bg-green-500/10 p-4 rounded-2xl text-green-500 group-hover:rotate-12 transition-transform">
               <CheckCircle2 className="h-6 w-6" />
@@ -378,7 +284,6 @@ const Landing = () => {
           </div>
         </div>
 
-        {/* Tip Bar */}
         <div className="flex items-center justify-center mb-16 px-8 py-4 bg-white/5 rounded-3xl border border-white/5">
           <Sparkles className="h-4 w-4 text-primary/50 mr-3" />
           <p className="text-[12px] text-gray-400 font-bold italic text-center animate-pulse">
@@ -386,7 +291,6 @@ const Landing = () => {
           </p>
         </div>
 
-        {/* Categories */}
         <section>
           <div className="flex items-end justify-between mb-10">
             <div>
