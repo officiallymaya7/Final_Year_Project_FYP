@@ -121,25 +121,86 @@ const CertificateEditor = ({
       });
       fabricRef.current = canvas;
 
-      const tempCanvas = document.createElement("canvas");
-      tempCanvas.width = template.width;
-      tempCanvas.height = template.height;
-      const ctx = tempCanvas.getContext("2d")!;
-      template.draw(ctx, {
-        participantName: participants[0]?.name || "Participant Name",
-        eventName,
-        date: new Date().toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "long",
-          year: "numeric",
-        }),
-        organizerName,
-      });
-      const bgDataUrl = tempCanvas.toDataURL();
-      const bgImg = await FabricImage.fromURL(bgDataUrl);
-      bgImg.set({ left: 0, top: 0, selectable: false, evented: false });
-      (bgImg as any).set("data", { isBackground: true });
-      canvas.add(bgImg);
+      canvas.add(
+  new Textbox("CERTIFICATE OF PARTICIPATION", {
+    left: 150,
+    top: 80,
+    width: 900,
+    fontSize: 48,
+    fontWeight: "bold",
+    textAlign: "center",
+    editable: true,
+    selectable: true,
+    evented: true,
+  })
+);
+
+canvas.add(
+  new Textbox("This certificate is proudly presented to", {
+    left: 250,
+    top: 170,
+    width: 700,
+    fontSize: 22,
+    textAlign: "center",
+    editable: true,
+    selectable: true,
+    evented: true,
+  })
+);
+
+canvas.add(
+  new Textbox("{{Name}}", {
+    left: 250,
+    top: 250,
+    width: 700,
+    fontSize: 44,
+    fontWeight: "bold",
+    fill: "#C89B2A",
+    textAlign: "center",
+    editable: true,
+    selectable: true,
+    evented: true,
+  })
+);
+
+canvas.add(
+  new Textbox(eventName || "Research Event", {
+    left: 250,
+    top: 350,
+    width: 700,
+    fontSize: 30,
+    textAlign: "center",
+    editable: true,
+    selectable: true,
+    evented: true,
+  })
+);
+
+canvas.add(
+  new Textbox(new Date().toLocaleDateString("en-GB"), {
+    left: 120,
+    top: 720,
+    width: 220,
+    fontSize: 18,
+    editable: true,
+    selectable: true,
+    evented: true,
+  })
+);
+
+canvas.add(
+  new Textbox(organizerName || "Organizer", {
+    left: 850,
+    top: 720,
+    width: 220,
+    fontSize: 18,
+    textAlign: "center",
+    editable: true,
+    selectable: true,
+    evented: true,
+  })
+);
+
       canvas.sendObjectToBack(bgImg);
 
       canvas.on("selection:created", (e: any) => setActiveObj(e.selected?.[0] || null));
