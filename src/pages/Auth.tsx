@@ -298,7 +298,7 @@ const Auth = () => {
         <Card className="bg-card/60 backdrop-blur-xl border-border/50 shadow-2xl shadow-primary/5">
           <CardContent className="p-8">
             <div className="text-center mb-8">
-              <img src={creovatorLogo} alt="Creovator" className="h-10 mx-auto mb-4 object-contain" />
+            <img src={creovatorLogo} alt="Creovator" className="h-16 mx-auto mb-4 object-contain scale-[3]" />
               <h1 className="text-2xl font-bold">{isLogin ? "Welcome Back" : "Create Account"}</h1>
               <p className="text-sm text-muted-foreground mt-1">
                 {isLogin ? "Sign in to your account" : "Get started with Creovator"}

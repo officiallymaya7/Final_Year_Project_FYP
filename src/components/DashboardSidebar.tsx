@@ -35,8 +35,12 @@ const DashboardSidebar = ({
   return (
     <aside className="w-64 min-h-screen bg-sidebar border-r border-sidebar-border flex flex-col">
       {/* Logo */}
-      <div className="p-5 border-b border-sidebar-border">
-        <img src={creovatorLogo} alt="Creovator" className="h-14 w-auto object-contain" />
+      <div className="p-5 border-b border-sidebar-border overflow-hidden">
+        <img
+          src={creovatorLogo}
+          alt="Creovator"
+          className="h-14 w-auto object-contain scale-[2.5] origin-left"
+        />
       </div>
 
       {/* Create Event Button */}

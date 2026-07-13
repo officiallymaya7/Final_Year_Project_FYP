@@ -8,7 +8,8 @@ import creovatorLogo from "@/assets/creovator-logo.png";
 
 const navItems = [
   { label: "Dashboard", path: "/dashboard" },
-  { label: "Designing Portal", path: "/dashboard/designer" },
+  // { label: "Designing Portal", path: "/dashboard/designer" },
+  { label: "Designing Portal", path: "/dashboard/manage" },
   { label: "Content Generation", path: "/dashboard/content-generation" },
   { label: "Email Automation", path: "/dashboard/email-automation" },
 ];
