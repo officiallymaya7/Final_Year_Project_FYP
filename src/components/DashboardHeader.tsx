@@ -60,12 +60,12 @@ const DashboardHeader = () => {
   return (
     <nav className="sticky top-0 z-50 border-b border-white/5 bg-[#0f0a1f]/80 backdrop-blur-md">
       <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-      <img
-  src={creovatorLogo}
-  alt="Creovator"
-  className="h-16 w-auto object-contain cursor-pointer shrink-0 scale-[3] origin-left"
-  onClick={() => navigate("/dashboard")}
-/>
+        <img
+          src={creovatorLogo}
+          alt="Creovator"
+          className="h-16 w-auto object-contain cursor-pointer shrink-0 scale-[3] origin-left"
+          onClick={() => navigate("/dashboard")}
+        />
 
         <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-muted-foreground">
           {navItems.map((item) => (
@@ -109,11 +109,6 @@ const DashboardHeader = () => {
                 </AvatarFallback>
               </Avatar>
             </button>
-
-            <div className="absolute top-full right-0 mt-2 px-3 py-1.5 bg-card border border-white/10 rounded-xl text-xs text-white font-bold whitespace-nowrap opacity-0 group-hover/avatar:opacity-100 transition-all pointer-events-none shadow-xl">
-              {userName || "View Profile"}
-              <div className="absolute -top-1 right-3 w-2 h-2 bg-card border-l border-t border-white/10 rotate-45" />
-            </div>
           </div>
 
           <Button
