@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Monitor, PartyPopper, ArrowRight, Sparkles,
-  CheckCircle2, Activity
+  CheckCircle2, Activity, CalendarCheck, Users, Layers
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -142,6 +142,24 @@ const DonutChart = ({ data }: { data: { type: string; count: number }[] }) => {
   );
 };
 
+// Small floating "building block" icon used to give a sense of events being assembled
+const FloatingChip = ({
+  icon: Icon,
+  className,
+  delay = "0s",
+}: {
+  icon: typeof CalendarCheck;
+  className: string;
+  delay?: string;
+}) => (
+  <div
+    className={`absolute hidden md:flex items-center justify-center w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-lg animate-float ${className}`}
+    style={{ animationDelay: delay }}
+  >
+    <Icon className="w-5 h-5 text-white/90" />
+  </div>
+);
+
 const Landing = () => {
   const navigate = useNavigate();
   const [welcomeMsg, setWelcomeMsg] = useState("");
@@ -197,13 +215,31 @@ const Landing = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0f0a1f] text-foreground selection:bg-primary/30">
+    <div className="min-h-screen bg-gradient-to-b from-[#160d33] via-[#1a0f38] to-[#150c2e] text-foreground selection:bg-primary/30 relative overflow-hidden">
+
+      {/* Local keyframes for the gentle floating "building block" chips */}
+      <style>{`
+        @keyframes float-slow {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-14px); }
+        }
+        .animate-float {
+          animation: float-slow 5s ease-in-out infinite;
+        }
+      `}</style>
+
+      {/* Ambient glow blobs, same family as Design Studio */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -left-20 w-[420px] h-[420px] rounded-full bg-indigo-600/25 blur-[120px]" />
+        <div className="absolute top-1/4 -right-32 w-[480px] h-[480px] rounded-full bg-fuchsia-600/20 blur-[130px]" />
+        <div className="absolute bottom-0 left-1/3 w-[380px] h-[380px] rounded-full bg-purple-500/20 blur-[120px]" />
+      </div>
 
       <DashboardHeader />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <main className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
-        <div className="mb-8">
+        <div className="mb-8 animate-in fade-in-0 slide-in-from-bottom-4 duration-700">
           <h2 className="text-4xl font-black tracking-tight text-white">
             {welcomeMsg || `Hello, ${userName || "Organizer"}`}
           </h2>
@@ -212,25 +248,31 @@ const Landing = () => {
           </p>
         </div>
 
-        <section className="relative w-full rounded-[3rem] overflow-hidden min-h-[420px] shadow-2xl group border border-white/5 mb-8">
+        <section className="relative w-full rounded-[3rem] overflow-hidden min-h-[420px] shadow-2xl group border border-white/10 mb-8 animate-in fade-in-0 slide-in-from-bottom-6 duration-700">
           <img
             src={heroBg} alt="Hero"
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-[3000ms] group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0f0a1f] via-[#0f0a1f]/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#160d33]/95 via-[#160d33]/60 to-[#160d33]/10" />
+
+          {/* Floating "building the event" chips */}
+          <FloatingChip icon={CalendarCheck} className="top-16 right-[22%]" delay="0s" />
+          <FloatingChip icon={Users} className="top-1/2 right-[10%]" delay="1.2s" />
+          <FloatingChip icon={Layers} className="bottom-16 right-[30%]" delay="2.1s" />
+
           <div className="relative h-full flex flex-col justify-center px-10 sm:px-16 py-12">
-            <Badge className="w-fit mb-6 bg-primary/20 text-primary border-primary/40 px-4 py-1 backdrop-blur-md uppercase tracking-[0.2em] text-[10px] font-black">
+            <Badge className="w-fit mb-6 bg-primary/20 text-primary border-primary/40 px-4 py-1 backdrop-blur-md uppercase tracking-[0.2em] text-[10px] font-black animate-in fade-in-0 slide-in-from-left-4 duration-700">
               Event Automation Hub
             </Badge>
-            <h1 className="text-4xl sm:text-6xl font-black mb-6 leading-[1.1] text-white">
+            <h1 className="text-4xl sm:text-6xl font-black mb-6 leading-[1.1] text-white animate-in fade-in-0 slide-in-from-left-6 duration-700 delay-100">
               Revolutionize <br />
               <span className="text-[#f9bb1e] italic text-5xl sm:text-7xl">Events.</span>
             </h1>
-            <p className="text-lg text-gray-300 max-w-md mb-10 leading-relaxed font-medium">
+            <p className="text-lg text-gray-300 max-w-md mb-10 leading-relaxed font-medium animate-in fade-in-0 slide-in-from-left-6 duration-700 delay-200">
               The ultimate workspace for smart event organization and automated asset generation.
             </p>
             <Button
-              className="w-fit gap-3 h-14 px-10 rounded-2xl font-black text-lg bg-primary hover:bg-primary/90 shadow-xl shadow-primary/30 transition-all hover:-translate-y-1"
+              className="w-fit gap-3 h-14 px-10 rounded-2xl font-black text-lg bg-primary hover:bg-primary/90 shadow-xl shadow-primary/30 transition-all hover:-translate-y-1 animate-in fade-in-0 slide-in-from-bottom-4 duration-700 delay-300"
               onClick={() => navigate("/dashboard/manage")}
             >
               OPEN DASHBOARD <ArrowRight className="w-5 h-5" />
@@ -241,7 +283,7 @@ const Landing = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
 
           <div
-            className="group flex flex-col gap-3 p-6 rounded-[2rem] bg-card/40 border border-white/5 hover:border-primary/30 backdrop-blur-xl transition-all shadow-xl cursor-pointer"
+            className="group flex flex-col gap-3 p-6 rounded-[2rem] bg-white/5 border border-white/10 hover:border-primary/40 backdrop-blur-xl transition-all shadow-xl cursor-pointer animate-in fade-in-0 slide-in-from-bottom-4 duration-700"
             onClick={() => navigate('/dashboard/manage')}
           >
             <div className="flex items-center gap-2 mb-1">
@@ -263,7 +305,7 @@ const Landing = () => {
             )}
           </div>
 
-          <div className="group flex gap-5 items-center p-6 rounded-[2rem] bg-card/40 border border-white/5 hover:border-secondary/30 backdrop-blur-xl transition-all shadow-xl">
+          <div className="group flex gap-5 items-center p-6 rounded-[2rem] bg-white/5 border border-white/10 hover:border-secondary/40 backdrop-blur-xl transition-all shadow-xl animate-in fade-in-0 slide-in-from-bottom-4 duration-700 delay-100">
             <div className="bg-secondary/10 p-4 rounded-2xl text-secondary group-hover:rotate-12 transition-transform">
               <Sparkles className="h-6 w-6" />
             </div>
@@ -273,7 +315,7 @@ const Landing = () => {
             </div>
           </div>
 
-          <div className="group flex gap-5 items-center p-6 rounded-[2rem] bg-card/40 border border-white/5 hover:border-green-500/30 backdrop-blur-xl transition-all shadow-xl">
+          <div className="group flex gap-5 items-center p-6 rounded-[2rem] bg-white/5 border border-white/10 hover:border-green-500/40 backdrop-blur-xl transition-all shadow-xl animate-in fade-in-0 slide-in-from-bottom-4 duration-700 delay-200">
             <div className="bg-green-500/10 p-4 rounded-2xl text-green-500 group-hover:rotate-12 transition-transform">
               <CheckCircle2 className="h-6 w-6" />
             </div>
@@ -284,7 +326,7 @@ const Landing = () => {
           </div>
         </div>
 
-        <div className="flex items-center justify-center mb-16 px-8 py-4 bg-white/5 rounded-3xl border border-white/5">
+        <div className="flex items-center justify-center mb-16 px-8 py-4 bg-white/5 rounded-3xl border border-white/10 animate-in fade-in-0 duration-700">
           <Sparkles className="h-4 w-4 text-primary/50 mr-3" />
           <p className="text-[12px] text-gray-400 font-bold italic text-center animate-pulse">
             "{randomTip}"
@@ -307,13 +349,14 @@ const Landing = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {eventCards.map((card) => (
+            {eventCards.map((card, i) => (
               <button
                 key={card.key}
                 onClick={() => navigate(`/dashboard/manage?type=${card.key}`)}
-                className={`group relative bg-gradient-to-br ${card.gradient} border ${card.border} rounded-[2.5rem] p-10 text-left transition-all duration-500 hover:-translate-y-4 hover:shadow-2xl`}
+                className={`group relative bg-gradient-to-br ${card.gradient} border ${card.border} rounded-[2.5rem] p-10 text-left transition-all duration-500 hover:-translate-y-4 hover:shadow-2xl animate-in fade-in-0 slide-in-from-bottom-6 duration-700`}
+                style={{ animationDelay: `${i * 120}ms` }}
               >
-                <div className="w-16 h-16 rounded-2xl bg-[#0f0a1f]/60 backdrop-blur-md flex items-center justify-center mb-8 border border-white/10 group-hover:scale-110 group-hover:border-primary/50 transition-all shadow-xl">
+                <div className="w-16 h-16 rounded-2xl bg-[#160d33]/70 backdrop-blur-md flex items-center justify-center mb-8 border border-white/10 group-hover:scale-110 group-hover:border-primary/50 transition-all shadow-xl">
                   <card.icon className="w-8 h-8 text-primary" />
                 </div>
                 <h3 className="text-2xl font-black mb-4 text-white group-hover:text-primary transition-colors">

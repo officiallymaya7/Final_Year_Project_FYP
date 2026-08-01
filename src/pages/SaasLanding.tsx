@@ -57,6 +57,7 @@ const SectionDivider = () => (
 const SaasLanding = () => {
   const navigate = useNavigate();
   const goAuth = () => navigate("/auth");
+  const goToPayment = (plan: typeof plans[number]) => navigate("/payment", { state: { plan } });
   
   const stepSectionRef = useRef<HTMLDivElement>(null);
   const stepTriggerRef = useRef<HTMLDivElement>(null);
@@ -342,7 +343,7 @@ const SaasLanding = () => {
                       </div>
                     ))}
                   </div>
-                  <Button onClick={goAuth} className={`w-full h-12 rounded-2xl text-sm font-bold transition-all duration-300 ${
+                  <Button onClick={() => goToPayment(p)} className={`w-full h-12 rounded-2xl text-sm font-bold transition-all duration-300 ${
                     p.highlighted ? "bg-white text-primary hover:bg-white/90 shadow-xl" : "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
                   }`}>
                     Click here to get started! <ArrowRight className="ml-2 h-4 w-4" />

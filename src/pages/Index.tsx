@@ -1,4 +1,5 @@
 import { toast } from 'sonner';
+import { useNavigate } from "react-router-dom";
 import CustomEventForm, { type CustomEventFormData } from "../components/CustomEventForm";
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
@@ -67,6 +68,7 @@ const DeleteConfirmModal = ({
 
 const Index = () => {
   const [events, setEvents] = useState<any[]>([]);
+  const navigate = useNavigate();
   const [totalParticipants, setTotalParticipants] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
@@ -229,11 +231,7 @@ const Index = () => {
           startDate: e.startDate,
         }))}
         onEventClick={(event) => {
-          const full = events.find(e => e.id === event.id);
-          if (full) {
-            setSelectedEvent(full);
-            setView("participants");
-          }
+          navigate(`/dashboard/event/${event.id}`);
         }}
       />
 
@@ -294,8 +292,7 @@ const Index = () => {
                         <button
                           className="flex items-center gap-4 flex-1 text-left"
                           onClick={() => {
-                            setSelectedEvent(event);
-                            setView("participants");
+                            navigate(`/dashboard/event/${event.id}`);
                           }}
                         >
                           {/* Timeline dot */}

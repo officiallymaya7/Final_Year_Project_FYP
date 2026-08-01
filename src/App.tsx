@@ -1,9 +1,17 @@
+import DesignPackageEditor from "./pages/DesignPackageEditor";
+import DesignPackageCreator from "./pages/DesignPackageCreator";
+import DesignStudio from "./pages/DesignStudio.tsx";
+import DesignEditor from "./pages/DesignEditor.tsx";
+import MyDesigns from "./pages/MyDesigns.tsx";
+import PaymentPage from "@/pages/Paymentpage";
 import AdminOrganizers from "@/admin/pages/AdminOrganizers";
 import AdminEvents from "@/admin/pages/AdminEvents";
 import { ChatHistoryProvider } from "@/context/ChatHistoryContext";
 import DesigningPortal from "./pages/DesigningPortal";
 import CertificateTemplates from "./pages/CertificateTemplates";
 import IdCardPage from "./pages/IdCardPage";
+import EventWorkspace from "./pages/EventWorkspace";
+import EventParticipants from "./pages/EventParticipants";
 import QrScanPage from "./pages/QrScanPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
@@ -38,6 +46,9 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<SaasLanding />} />
+          
+
+          <Route path="/payment" element={<PaymentPage />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/profile" element={<UserProfile />} />
 
@@ -47,8 +58,18 @@ const App = () => (
           <Route path="/dashboard/designer" element={<DesigningPortal />} />
           <Route path="/dashboard/id-cards" element={<IdCardPage />} />
           <Route path="/dashboard/qr-scan" element={<QrScanPage />} />
+          <Route path="/dashboard/event/:eventId" element={<EventWorkspace />} />
+          <Route path="/dashboard/event/:eventId/participants" element={<EventParticipants />} />
           <Route path="/dashboard/content-generation" element={<ContentGeneration />} />
           <Route path="/dashboard/email-automation" element={<EmailAutomation />} />
+
+          {/* Design Studio (new) */}
+          <Route path="/dashboard/design" element={<DesignStudio />} />
+          <Route path="/dashboard/design/my" element={<MyDesigns />} />
+          <Route path="/dashboard/design/editor/:templateId" element={<DesignEditor />} />
+          <Route path="/dashboard/design/saved/:designId" element={<DesignEditor />} />
+          <Route path="/dashboard/event/:eventId/design" element={<DesignPackageCreator />} />
+          <Route path="/dashboard/event/:eventId/design/editor" element={<DesignPackageEditor />} />
 
           {/* Admin Panel Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -57,6 +78,7 @@ const App = () => (
             <Route path="organizers" element={<AdminOrganizers />} />
             <Route path="events" element={<AdminEvents />} />
             {/* subscriptions route yahan add hoga (Step 4) */}
+            
           </Route>
 
           <Route path="*" element={<NotFound />} />

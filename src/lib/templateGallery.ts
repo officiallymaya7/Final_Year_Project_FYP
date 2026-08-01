@@ -41,7 +41,7 @@ const buildElegantGoldCertificate = async () => {
   canvas.add(new Textbox("Organizer", { left: 220, top: 740, fontSize: 16, fill: "#444444" }));
   canvas.add(new Textbox("Event Coordinator", { left: 870, top: 740, fontSize: 16, fill: "#444444" }));
   await addQr(canvas, { left: 540, top: 700, size: 110, dynamic: true });
-  return canvas.toJSON(["data"]);
+  return canvas.toObject(["data"]);
 };
 
 const buildModernBlueCertificate = async () => {
@@ -56,14 +56,40 @@ const buildModernBlueCertificate = async () => {
   canvas.add(new Textbox("Organizer", { left: 240, top: 740, fontSize: 14, fill: "#334155" }));
   canvas.add(new Textbox("Event Coordinator", { left: 880, top: 740, fontSize: 14, fill: "#334155" }));
   await addQr(canvas, { left: 545, top: 700, size: 110, dynamic: true });
-  return canvas.toJSON(["data"]);
+  return canvas.toObject(["data"]);
 };
 
-// Baaki sab build functions mein bhi last line ko `return canvas.toJSON(["data"]);` kar do (main ne sirf 2 diya hai example ke liye, baaki same tarike se change kar lena)
+// ─── Poster & Banner (used by the general "Design Studio" card) ────────────
+
+const buildSimplePoster = async () => {
+  const W = 900, H = 1200;
+  const canvas = new StaticCanvas(document.createElement("canvas"), { width: W, height: H, backgroundColor: "#0F0A1F" });
+  canvas.add(new Rect({ left: 0, top: 0, width: W, height: 260, fill: "#F9BB1E" }));
+  canvas.add(new Circle({ left: W - 180, top: 60, radius: 90, fill: "#ffffff22" }));
+  canvas.add(new Textbox("YOUR EVENT NAME", { left: 60, top: 320, width: W - 120, fontSize: 64, fontWeight: "bold", fill: "#FFFFFF", textAlign: "center", fontFamily: "Arial" }));
+  canvas.add(new Textbox("Tagline or short description goes here", { left: 80, top: 430, width: W - 160, fontSize: 26, fill: "#CBD5E1", textAlign: "center", fontFamily: "Arial" }));
+  canvas.add(new Textbox("[Date]  •  [Venue]", { left: 80, top: 1080, width: W - 160, fontSize: 24, fill: "#F9BB1E", textAlign: "center", fontFamily: "Arial", fontWeight: "bold" }));
+  return canvas.toObject(["data"]);
+};
+
+const buildSimpleBanner = async () => {
+  const W = 1600, H = 500;
+  const canvas = new StaticCanvas(document.createElement("canvas"), { width: W, height: H, backgroundColor: "#1E3A8A" });
+  canvas.add(new Rect({ left: 0, top: H - 24, width: W, height: 24, fill: "#F9BB1E" }));
+  canvas.add(new Textbox("YOUR EVENT NAME", { left: 80, top: 150, width: W - 160, fontSize: 72, fontWeight: "bold", fill: "#FFFFFF", textAlign: "left", fontFamily: "Arial" }));
+  canvas.add(new Textbox("[Date]   •   [Venue]", { left: 80, top: 270, width: W - 160, fontSize: 30, fill: "#DBEAFE", textAlign: "left", fontFamily: "Arial" }));
+  return canvas.toObject(["data"]);
+};
+
+// Baaki sab build functions mein bhi last line ko `return canvas.toObject(["data"]);` kar do
+// (canvas.toJSON() fabric v7 me koi argument accept nahi karta, isliye toObject() use karo
+// jab bhi custom "data" property jaisi extra info JSON me chahiye ho)
 
 export const galleryTemplates: GalleryTemplate[] = [
   { key: "cert-elegant-gold",  name: "Elegant Gold",       category: "certificate", width: 1200, height: 850,  build: buildElegantGoldCertificate },
   { key: "cert-modern-blue",   name: "Modern Blue",         category: "certificate", width: 1200, height: 850,  build: buildModernBlueCertificate },
+  { key: "poster-simple",      name: "Simple Poster",       category: "poster",      width: 900,  height: 1200, build: buildSimplePoster },
+  { key: "banner-simple",      name: "Simple Banner",       category: "banner",      width: 1600, height: 500,  build: buildSimpleBanner },
   // ... baaki templates same rakh do
 ];
 

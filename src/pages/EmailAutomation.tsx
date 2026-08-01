@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mail, Send, Loader2, CheckCircle2, XCircle, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ interface ParticipantRow {
 
 const EmailAutomation = () => {
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
   const [events, setEvents] = useState<EventRow[]>([]);
@@ -54,6 +55,8 @@ const EmailAutomation = () => {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
       setEvents(data || []);
+      const preselect = searchParams.get("event_id");
+      if (preselect) setSelectedEventId(preselect);
     };
     loadEvents();
   }, []);
