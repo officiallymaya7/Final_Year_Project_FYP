@@ -121,87 +121,38 @@ const CertificateEditor = ({
       });
       fabricRef.current = canvas;
 
-      canvas.add(
-  new Textbox("CERTIFICATE OF PARTICIPATION", {
-    left: 150,
-    top: 80,
-    width: 900,
-    fontSize: 48,
-    fontWeight: "bold",
-    textAlign: "center",
-    editable: true,
-    selectable: true,
-    evented: true,
-  })
-);
-
-canvas.add(
-  new Textbox("This certificate is proudly presented to", {
-    left: 250,
-    top: 170,
-    width: 700,
-    fontSize: 22,
-    textAlign: "center",
-    editable: true,
-    selectable: true,
-    evented: true,
-  })
-);
-
-canvas.add(
-  new Textbox("{{Name}}", {
-    left: 250,
-    top: 250,
-    width: 700,
-    fontSize: 44,
-    fontWeight: "bold",
-    fill: "#C89B2A",
-    textAlign: "center",
-    editable: true,
-    selectable: true,
-    evented: true,
-  })
-);
-
-canvas.add(
-  new Textbox(eventName || "Research Event", {
-    left: 250,
-    top: 350,
-    width: 700,
-    fontSize: 30,
-    textAlign: "center",
-    editable: true,
-    selectable: true,
-    evented: true,
-  })
-);
-
-canvas.add(
-  new Textbox(new Date().toLocaleDateString("en-GB"), {
-    left: 120,
-    top: 720,
-    width: 220,
-    fontSize: 18,
-    editable: true,
-    selectable: true,
-    evented: true,
-  })
-);
-
-canvas.add(
-  new Textbox(organizerName || "Organizer", {
-    left: 850,
-    top: 720,
-    width: 220,
-    fontSize: 18,
-    textAlign: "center",
-    editable: true,
-    selectable: true,
-    evented: true,
-  })
-);
-
-      canvas.sendObjectToBack(bgImg);
+      // Render the selected template as a locked background image so the editor
+      // shows the real certificate design. Anything the user adds sits on top and
+      // is composited over the same base for every participant at generation time.
+      const sampleName = participants[0]?.name || "Participant Name";
+      const baseEl = document.createElement("canvas");
+      baseEl.width = template.width;
+      baseEl.height = template.height;
+      const baseCtx = baseEl.getContext("2d");
+      if (baseCtx) {
+        template.draw(baseCtx, {
+          participantName: sampleName,
+          eventName: eventName || "Event Name",
+          date: new Date().toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+          }),
+          organizerName: organizerName || "Organizer",
+        });
+        const bgImg = await FabricImage.fromURL(baseEl.toDataURL("image/png"));
+        bgImg.set({
+          left: 0,
+          top: 0,
+          selectable: false,
+          evented: false,
+          hoverCursor: "default",
+          excludeFromExport: true,
+        });
+        (bgImg as any).set("data", { isBackground: true });
+        canvas.add(bgImg);
+        canvas.sendObjectToBack(bgImg);
+      }
 
       canvas.on("selection:created", (e: any) => setActiveObj(e.selected?.[0] || null));
       canvas.on("selection:updated", (e: any) => setActiveObj(e.selected?.[0] || null));
@@ -341,6 +292,16 @@ canvas.add(
     setIsGenerating(true);
     setProgress({ done: 0, total: participants.length });
     try {
+      // Serialize any decorative elements / dynamic fields the user added on top
+      // of the template. The background image is flagged excludeFromExport, so this
+      // overlay contains only the user's additions (empty overlay = plain template).
+      const overlay: any = fabricRef.current?.toObject(["data"]);
+      if (overlay) {
+        // Drop the editor's own canvas background so only the user's added objects
+        // are composited over each participant's rendered template.
+        delete overlay.background;
+        delete overlay.backgroundImage;
+      }
       const res = await generateCertificatesForList({
         template,
         participants,
@@ -350,6 +311,9 @@ canvas.add(
         dayNumber,
         organizerName,
         onProgress: (done, total) => setProgress({ done, total }),
+        fabricOverlayJson: overlay,
+        fabricCanvasWidth: template.width,
+        fabricCanvasHeight: template.height,
       });
       toast.success(`${res.length} certificates generated!`);
       onDone(res);

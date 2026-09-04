@@ -298,7 +298,7 @@ const TemplateGallery = ({
 
 // ─── Editor ───────────────────────────────────────────────────────────────────
 const IdCardEditor = ({
-  template, participants, eventId, onBack, onDone,
+  template, participants, eventId, listName, dayNumber, onBack, onDone,
 }: {
   template: IdCardTemplate;
   participants: Participant[];
@@ -469,6 +469,34 @@ const IdCardEditor = ({
         sc.dispose();
 
         results.push({ participantId: p.id, participantName: p.name, fileUrl: dataUrl });
+
+        // Best-effort persistence (mirrors the certificates flow). If the `id-cards`
+        // storage bucket / `id_cards` table aren't set up yet, downloads still work —
+        // we simply skip saving instead of failing the whole generation.
+        try {
+          const blob = await (await fetch(dataUrl)).blob();
+          const path = `${eventId}/${listName}/${p.id}.png`;
+          const { error: upErr } = await supabase.storage
+            .from("id-cards")
+            .upload(path, blob, { contentType: "image/png", upsert: true });
+          if (!upErr) {
+            const { data: pub } = supabase.storage.from("id-cards").getPublicUrl(path);
+            await supabase.from("id_cards").upsert(
+              {
+                event_id: eventId,
+                participant_id: p.id,
+                list_name: listName,
+                day_number: dayNumber,
+                file_url: pub.publicUrl,
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: "participant_id" }
+            );
+          }
+        } catch (_) {
+          // persistence is optional — keep the client-side result
+        }
+
         setProgress({ done: i + 1, total: participants.length });
       }
 

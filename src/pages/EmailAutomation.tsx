@@ -109,11 +109,46 @@ const EmailAutomation = () => {
     }
 
     setSending(true);
-    // TODO: Connect Resend Edge Function here (next step)
-    setTimeout(() => {
-      toast({ title: "This feature is still under development — sending not connected yet" });
+    try {
+      const recipients = participants
+        .filter((p) => selectedIds.has(p.id) && p.email)
+        .map((p) => ({ email: p.email as string, name: p.name }));
+
+      if (recipients.length === 0) {
+        toast({ variant: "destructive", title: "None of the selected participants have an email address" });
+        setSending(false);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("send-email", {
+        body: { recipients, subject, content, eventId: selectedEventId },
+      });
+
+      if (error || !data?.success) {
+        throw new Error(data?.error ?? error?.message ?? "Failed to send emails");
+      }
+
+      const sent = data.sent ?? 0;
+      const failed = data.failed ?? 0;
+
+      if (failed > 0) {
+        toast({
+          variant: failed === recipients.length ? "destructive" : "default",
+          title: `Sent ${sent}, ${failed} failed`,
+          description: "Some emails could not be delivered. Check the addresses and try again.",
+        });
+      } else {
+        toast({ title: `Email sent to ${sent} participant${sent !== 1 ? "s" : ""}` });
+        // Reset the composer after a fully successful send
+        setSubject("");
+        setContent("");
+        setSelectedIds(new Set());
+      }
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Send failed", description: err.message });
+    } finally {
       setSending(false);
-    }, 1000);
+    }
   };
 
   const participantsWithEmail = participants.filter((p) => p.email);

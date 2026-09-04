@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -28,6 +30,15 @@ const PaymentPage = () => {
   const [method, setMethod] = useState<"card" | "bank" | "wallet">("card");
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [gatewayNote, setGatewayNote] = useState<string | null>(null);
+
+  // Handle the redirect back from PayFast (SUCCESS_URL / FAILURE_URL carry ?status=)
+  useEffect(() => {
+    const status = searchParams.get("status");
+    if (status === "success") setSuccess(true);
+    else if (status === "failed") setGatewayNote("Payment was cancelled or failed. Please try again.");
+  }, [searchParams]);
 
   // Billing
   const [fullName, setFullName] = useState("");
@@ -59,14 +70,67 @@ const PaymentPage = () => {
     return digits;
   };
 
-  const handlePay = (e: React.FormEvent) => {
+  const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessing(true);
-    // TODO: replace with real payment gateway call (Stripe/PayFast/JazzCash API etc.)
-    setTimeout(() => {
+    setGatewayNote(null);
+    try {
+      const basketId = `CREO-${plan.name}-${Date.now()}`;
+      const { data, error } = await supabase.functions.invoke("create-payment", {
+        body: { amount: plan.price, basketId, email, phone },
+      });
+
+      if (error) throw new Error(error.message);
+
+      if (data?.notConfigured) {
+        setGatewayNote(
+          "The payment gateway isn't connected yet. Add your PayFast credentials (PAYFAST_MERCHANT_ID / PAYFAST_SECURED_KEY) as Supabase secrets to enable live checkout."
+        );
+        setProcessing(false);
+        return;
+      }
+
+      if (!data?.success || !data?.token) {
+        throw new Error(data?.error ?? "Could not start the payment.");
+      }
+
+      // Redirect the shopper to PayFast's secure checkout by auto-submitting a form.
+      const origin = window.location.origin;
+      const fields: Record<string, string> = {
+        MERCHANT_ID: data.merchantId,
+        MERCHANT_NAME: data.merchantName,
+        TOKEN: data.token,
+        PROCCODE: "00",
+        TXNAMT: data.amount,
+        CUSTOMER_MOBILE_NO: phone,
+        CUSTOMER_EMAIL_ADDRESS: email,
+        SIGNATURE: "",
+        VERSION: "CREOVATOR-1.0",
+        TXNDESC: `${plan.name} plan subscription`,
+        SUCCESS_URL: `${origin}/payment?status=success`,
+        FAILURE_URL: `${origin}/payment?status=failed`,
+        BASKET_ID: data.basketId,
+        ORDER_DATE: new Date().toISOString(),
+        CHECKOUT_URL: `${origin}/payment`,
+        CURRENCY_CODE: data.currency || "PKR",
+      };
+
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = data.postUrl;
+      Object.entries(fields).forEach(([k, v]) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = k;
+        input.value = v ?? "";
+        form.appendChild(input);
+      });
+      document.body.appendChild(form);
+      form.submit();
+    } catch (err: any) {
+      toast.error(err.message || "Payment could not be started.");
       setProcessing(false);
-      setSuccess(true);
-    }, 1800);
+    }
   };
 
   if (success) {
@@ -228,6 +292,12 @@ const PaymentPage = () => {
                 </TabsContent>
               </Tabs>
             </div>
+
+            {gatewayNote && (
+              <div className="rounded-xl border border-amber-300/60 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+                {gatewayNote}
+              </div>
+            )}
 
             <Button type="submit" size="lg" disabled={processing} className="w-full h-14 text-lg font-bold shadow-xl shadow-primary/20">
               {processing ? "Processing..." : `Pay $${plan.price} Now`}

@@ -34,7 +34,7 @@ const EventAssetPack = ({ eventId, eventName }: EventAssetPackProps) => {
       setBrandKit(updated);
     } catch (err) {
       console.error(err);
-      toast.error("Save nahi hui.");
+      toast.error("Couldn't save.");
     }
   };
 

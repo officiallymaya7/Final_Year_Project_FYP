@@ -4,7 +4,8 @@
  * Route: /qr-scan?event_id=xxx   (or opened directly from a QR scanner app)
  *
  * This page:
- *  1. Reads the scanned QR payload (JSON: { participantId, eventId })
+ *  1. Reads the scanned QR payload (JSON: { participantId, eventId }) — either
+ *     from the live device camera (html5-qrcode) or pasted/typed manually.
  *  2. Marks attendance in Supabase (attendance table)
  *  3. Shows participant details + success / already-checked-in / error state
  *
@@ -26,8 +27,9 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import {
   QrCode, CheckCircle2, AlertCircle, Loader2, ArrowLeft,
-  User, Building2, Tag, Mail, Phone, Clock, RefreshCw,
+  User, Building2, Tag, Mail, Phone, Clock, RefreshCw, Camera, CameraOff,
 } from "lucide-react";
+import { Html5Qrcode } from "html5-qrcode";
 import { supabase } from "../lib/supabase";
 import { toast } from "sonner";
 
@@ -79,10 +81,23 @@ const QrScanPage = () => {
   const [checkedInAt, setCheckedInAt]   = useState<string>("");
   const [eventName, setEventName]       = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [cameraOn, setCameraOn] = useState(false);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
 
   // Auto-process if payload came in via URL
   useEffect(() => {
     if (urlPayload) handleScan(urlPayload);
+  }, []);
+
+  // Make sure the camera is released if the user leaves the page mid-scan
+  useEffect(() => {
+    return () => {
+      const s = scannerRef.current;
+      if (s) {
+        s.stop().then(() => s.clear()).catch(() => {});
+        scannerRef.current = null;
+      }
+    };
   }, []);
 
   const handleScan = async (raw = inputValue) => {
@@ -158,6 +173,42 @@ const QrScanPage = () => {
     }
   };
 
+  const stopCamera = async () => {
+    const s = scannerRef.current;
+    scannerRef.current = null;
+    setCameraOn(false);
+    if (s) {
+      try { await s.stop(); } catch { /* already stopped */ }
+      try { s.clear(); } catch { /* nothing to clear */ }
+    }
+  };
+
+  const startCamera = async () => {
+    setScanState("idle");
+    setParticipant(null);
+    setCameraOn(true);
+    // Wait a tick for the #qr-reader container to mount before attaching the camera
+    await new Promise((r) => setTimeout(r, 60));
+    try {
+      const scanner = new Html5Qrcode("qr-reader");
+      scannerRef.current = scanner;
+      await scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          setInputValue(decodedText);
+          stopCamera();
+          handleScan(decodedText);
+        },
+        () => { /* ignore per-frame decode misses */ }
+      );
+    } catch (err) {
+      toast.error("Unable to access the camera. You can paste the QR data instead.");
+      scannerRef.current = null;
+      setCameraOn(false);
+    }
+  };
+
   const reset = () => {
     setScanState("idle");
     setParticipant(null);
@@ -207,10 +258,34 @@ const QrScanPage = () => {
 
       <div className="flex-1 flex flex-col items-center justify-start p-6 gap-6 max-w-lg mx-auto w-full pt-10">
 
+        {/* Camera scanner */}
+        <div className="w-full bg-card border border-border rounded-2xl p-5 shadow-sm">
+          <p className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">
+            Scan with camera
+          </p>
+          {cameraOn && (
+            <div id="qr-reader" className="w-full overflow-hidden rounded-xl mb-3" />
+          )}
+          {!cameraOn ? (
+            <button onClick={startCamera}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-violet-600 text-white text-sm font-semibold hover:bg-violet-700 transition-colors">
+              <Camera className="h-4 w-4" /> Start Camera
+            </button>
+          ) : (
+            <button onClick={stopCamera}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-border bg-background text-sm font-semibold hover:bg-accent/30 transition-colors">
+              <CameraOff className="h-4 w-4" /> Stop Camera
+            </button>
+          )}
+          <p className="text-xs text-muted-foreground mt-2 text-center">
+            Point the camera at a participant's ID card QR code.
+          </p>
+        </div>
+
         {/* Input area — always visible so staff can scan next */}
         <div className="w-full bg-card border border-border rounded-2xl p-5 shadow-sm">
           <p className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">
-            Paste / scan QR payload
+            Or paste / type QR payload
           </p>
           <textarea
             ref={inputRef}

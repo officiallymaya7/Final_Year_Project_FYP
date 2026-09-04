@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { supabase } from "@/lib/supabase";
 
 interface AdminUser {
   id: string;
@@ -21,7 +22,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Step 3 mein ye real session verification (Edge Function) se replace hoga
+    // Restore a previously verified admin session (set after a successful login).
     const saved = sessionStorage.getItem(ADMIN_SESSION_KEY);
     if (saved) {
       setAdmin(JSON.parse(saved));
@@ -30,16 +31,25 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (username: string, password: string) => {
-    // TODO (Step 3): Yahan Supabase Edge Function call hogi jo `admins`
-    // table ke against username/password verify karegi (bcrypt compare).
-    // Abhi ke liye placeholder logic:
-    if (username === "admin" && password === "admin123") {
-      const mockAdmin = { id: "temp-id", username };
-      setAdmin(mockAdmin);
-      sessionStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(mockAdmin));
+    // Credentials are verified server-side by the `admin-login` Edge Function,
+    // which checks them against the `admins` table via the `verify_admin_login`
+    // Postgres function (password hashes never leave the database).
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-login", {
+        body: { username, password },
+      });
+
+      if (error || !data?.success || !data?.admin) {
+        return { success: false, error: data?.error ?? "Invalid username or password" };
+      }
+
+      const adminUser: AdminUser = { id: data.admin.id, username: data.admin.username };
+      setAdmin(adminUser);
+      sessionStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(adminUser));
       return { success: true };
+    } catch (err) {
+      return { success: false, error: "Could not reach the server. Please try again." };
     }
-    return { success: false, error: "Invalid username or password" };
   };
 
   const logout = () => {

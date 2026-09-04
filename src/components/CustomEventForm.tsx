@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +18,7 @@ export interface CustomEventFormData {
   endDate: string;
   durationDays?: number;
   venue: string;
-  dayVenues?: string[]; // 🔥 Yeh array add kiya hai sync ke liye
+  dayVenues?: string[]; // Wrapped into an array to stay in sync with multi-day events
   description: string;
 }
 
@@ -30,7 +31,7 @@ const CustomEventForm = ({ onClose, onSubmit }: Props) => {
     startDate: "",
     endDate: "",
     venue: "",
-    dayVenues: [], // 🔥 Initialize array
+    dayVenues: [], // Initialize the per-day venue array
     description: "",
   });
 
@@ -47,10 +48,8 @@ const CustomEventForm = ({ onClose, onSubmit }: Props) => {
         ) + 1
       : null;
 
-  // ✅ Aapka manga hua handleSubmit logic yahan hai
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Submit Clicked!", form); // 👈 Yeh line temporarily add
 
     if (isPastDate) return;
     if (!form.startDate || !form.endDate) return;
@@ -59,7 +58,7 @@ const CustomEventForm = ({ onClose, onSubmit }: Props) => {
     const end = new Date(form.endDate);
 
     if (end < start) {
-      alert("End date start date se pehle nahi ho sakti");
+      toast.error("End date cannot be before the start date.");
       return;
     }
 
@@ -69,11 +68,11 @@ const CustomEventForm = ({ onClose, onSubmit }: Props) => {
           (1000 * 60 * 60 * 24)
       ) + 1;
 
-    // 🔥 Sync logic: Single venue ko array mein wrap karke bhejna
+    // Wrap the single venue into a 1-element array so the shape matches multi-day events
     onSubmit({
       ...form,
       durationDays: diffDays,
-      dayVenues: [form.venue] 
+      dayVenues: [form.venue]
     });
   };
 
@@ -167,7 +166,7 @@ const CustomEventForm = ({ onClose, onSubmit }: Props) => {
           {/* Past date warning */}
           {isPastDate && (
             <p className="text-sm text-red-500">
-              Start date past nahi ho sakti
+              Start date cannot be in the past
             </p>
           )}
 

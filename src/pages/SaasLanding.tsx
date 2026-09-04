@@ -35,9 +35,9 @@ const steps = [
 ];
 
 const plans = [
-  { name: "Basic", price: "9", period: "/month", features: ["5 Events/month", "100 Participants", "Basic Email Support", "Basic Templates"], highlighted: false },
-  { name: "Pro", price: "29", period: "/month", features: ["Unlimited Events", "1,000 Participants", "Limited Email Automation", "Custom Templates", "Analytics", "QR Check-in"], highlighted: true },
-  { name: "Enterprise", price: "99", period: "/month", features: ["Unlimited Events", "5,000 Participants", "Bulk Creation", "Email Automation", "AI Content Generation", "Analytics", "QR Check-in"], highlighted: false },
+  { name: "Basic", price: "₨2,520", period: "/month", features: ["5 Events/month", "100 Participants", "Basic Email Support", "Basic Templates"], highlighted: false },
+  { name: "Pro", price: "₨8,120", period: "/month", features: ["Unlimited Events", "1,000 Participants", "Limited Email Automation", "Custom Templates", "Analytics", "QR Check-in"], highlighted: true },
+  { name: "Enterprise", price: "₨27,720", period: "/month", features: ["Unlimited Events", "5,000 Participants", "Bulk Creation", "Email Automation", "AI Content Generation", "Analytics", "QR Check-in"], highlighted: false },
 ];
 
 const team = [
@@ -326,7 +326,7 @@ const SaasLanding = () => {
                       {p.name.toUpperCase()} PLAN
                     </Badge>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-5xl font-bold">${p.price}</span>
+                      <span className="text-5xl font-bold">{p.price}</span>
                       <span className={`text-sm font-medium ${p.highlighted ? "text-white/70" : "text-primary/70"}`}>{p.period}</span>
                     </div>
                     <p className={`text-xs mt-3 italic leading-relaxed ${p.highlighted ? "text-white/60" : "text-primary/60"}`}>
@@ -414,7 +414,8 @@ const SaasLanding = () => {
       <footer className="border-t border-border/30 py-16 px-4 sm:px-6 lg:px-8 bg-muted/5">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           <div className="space-y-4">
-            <img src={creovatorLogo} alt="Creovator" className="w-40 h-auto object-contain" />
+          {/* <img src={creovatorLogo} alt="Creovator" className="h-14 w-auto object-contain" /> */}
+          <span className="text-3xl font-bold heading-gradient italic">Creovator</span>
             <p className="text-muted-foreground text-sm">Leading the future of event management with AI.</p>
           </div>
           <div>
