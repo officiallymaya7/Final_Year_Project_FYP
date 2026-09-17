@@ -34,6 +34,8 @@ const DesignPackageEditor = () => {
   const [saving, setSaving] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [activeObj, setActiveObj] = useState<any>(null);
+  const [activeObjColor, setActiveObjColor] = useState("#000000");
+  const [activeObjFontSize, setActiveObjFontSize] = useState(32);
   const [rightTab, setRightTab] = useState<"brand" | "elements">("brand");
 
   const canvasElRef = useRef<HTMLCanvasElement>(null);
@@ -126,8 +128,15 @@ const DesignPackageEditor = () => {
     fabricRef.current = canvas;
     userObjectsRef.current = [];
 
-    canvas.on("selection:created", (e: any) => setActiveObj(e.selected?.[0] || null));
-    canvas.on("selection:updated", (e: any) => setActiveObj(e.selected?.[0] || null));
+    const updateActiveObjState = (obj: any) => {
+      setActiveObj(obj || null);
+      if (obj) {
+        setActiveObjColor((obj.fill as string) || "#000000");
+        setActiveObjFontSize(obj.fontSize || 32);
+      }
+    };
+    canvas.on("selection:created", (e: any) => updateActiveObjState(e.selected?.[0]));
+    canvas.on("selection:updated", (e: any) => updateActiveObjState(e.selected?.[0]));
     canvas.on("selection:cleared", () => setActiveObj(null));
 
     (async () => {
@@ -234,10 +243,12 @@ const DesignPackageEditor = () => {
   const handleColorChange = (color: string) => {
     const obj = fabricRef.current?.getActiveObject(); if (!obj) return;
     obj.set("fill", color); fabricRef.current?.renderAll();
+    setActiveObjColor(color);
   };
   const handleFontSizeChange = (size: number) => {
     const obj = fabricRef.current?.getActiveObject() as any; if (!obj) return;
     obj.set("fontSize", size); fabricRef.current?.renderAll();
+    setActiveObjFontSize(size);
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -408,12 +419,12 @@ const DesignPackageEditor = () => {
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Selected Object</p>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-slate-600">Color</span>
-                      <input type="color" defaultValue="#000000" onChange={(e) => handleColorChange(e.target.value)} className="w-9 h-9 rounded-lg cursor-pointer border border-slate-200" />
+                      <input type="color" value={activeObjColor} onChange={(e) => handleColorChange(e.target.value)} className="w-9 h-9 rounded-lg cursor-pointer border border-slate-200" />
                     </div>
                     {activeObj.type === "textbox" && (
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-slate-600">Font Size</span>
-                        <input type="number" defaultValue={activeObj.fontSize || 32} min={8} max={200} onChange={(e) => handleFontSizeChange(Number(e.target.value))} className="w-20 px-2 py-1 rounded-lg border border-slate-200 text-sm text-center" />
+                        <input type="number" value={activeObjFontSize} min={8} max={200} onChange={(e) => handleFontSizeChange(Number(e.target.value))} className="w-20 px-2 py-1 rounded-lg border border-slate-200 text-sm text-center" />
                       </div>
                     )}
                   </div>

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Canvas, Textbox, Rect, Circle, FabricImage } from "fabric";
 import QRCode from "qrcode";
+import JSZip from "jszip";
 import { supabase } from "../lib/supabase";
 import { certificateTemplates, type CertificateTemplate } from "../lib/certificateTemplates";
 import { generateCertificatesForList, type GenerateResult } from "../lib/certificateGenerator";
@@ -563,6 +564,107 @@ const CertificateEditor = ({
   );
 };
 
+// ── Results Screen ─────────────────────────────────────────────────────────────
+const CertificateResultsScreen = ({
+  results,
+  listName,
+  onBack,
+}: {
+  results: GenerateResult[];
+  listName: string;
+  onBack: () => void;
+}) => {
+  const [isZipping, setIsZipping] = useState(false);
+  const [zipProgress, setZipProgress] = useState({ done: 0, total: 0 });
+
+  const downloadSingle = async (url: string, name: string) => {
+    try {
+      const blob = await (await fetch(url)).blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${name}_certificate.png`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      // fallback: open in new tab
+      window.open(url, "_blank");
+    }
+  };
+
+  const downloadAll = async () => {
+    setIsZipping(true);
+    setZipProgress({ done: 0, total: results.length });
+    try {
+      const zip = new JSZip();
+      for (let i = 0; i < results.length; i++) {
+        const r = results[i];
+        const blob = await (await fetch(r.fileUrl)).blob();
+        zip.file(`${r.participantName}_certificate.png`, blob);
+        setZipProgress({ done: i + 1, total: results.length });
+      }
+      const content = await zip.generateAsync({ type: "blob" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(content);
+      a.download = `${listName}_certificates.zip`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast.success("ZIP downloaded!");
+    } catch (err: any) {
+      toast.error("ZIP failed: " + err.message);
+    } finally {
+      setIsZipping(false);
+    }
+  };
+
+  return (
+    <div className="p-6 max-w-5xl mx-auto w-full">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2 text-emerald-500">
+          <CheckCircle2 className="h-5 w-5" />
+          <span className="font-semibold">
+            {results.length} certificates generated and saved!
+          </span>
+        </div>
+        <button
+          onClick={downloadAll}
+          disabled={isZipping}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#F9BB1E] text-black text-sm font-semibold hover:bg-[#F9BB1E]/90 transition-colors disabled:opacity-50"
+        >
+          {isZipping ? (
+            <><Loader2 className="h-4 w-4 animate-spin" /> {zipProgress.done}/{zipProgress.total}</>
+          ) : (
+            <><Download className="h-4 w-4" /> Download All (ZIP)</>
+          )}
+        </button>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        {results.map((r) => (
+          <div key={r.participantId} className="bg-card border border-border rounded-xl p-3">
+            <img
+              src={r.fileUrl}
+              alt={r.participantName}
+              className="w-full rounded-lg border border-border mb-2"
+            />
+            <p className="text-sm font-medium truncate">{r.participantName}</p>
+            <button
+              onClick={() => downloadSingle(r.fileUrl, r.participantName)}
+              className="mt-2 w-full flex items-center justify-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+            >
+              <Download className="h-3 w-3" /> Download
+            </button>
+          </div>
+        ))}
+      </div>
+      <button
+        onClick={onBack}
+        className="mt-6 flex items-center gap-2 text-sm text-primary hover:underline"
+      >
+        <RefreshCw className="h-3.5 w-3.5" /> Generate with a different template
+      </button>
+    </div>
+  );
+};
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 const CertificateTemplatesPage = () => {
   const navigate = useNavigate();
@@ -712,42 +814,11 @@ const CertificateTemplatesPage = () => {
           }}
         />
       ) : step === "results" ? (
-        <div className="p-6 max-w-5xl mx-auto w-full">
-          <div className="flex items-center gap-2 mb-4 text-emerald-500">
-            <CheckCircle2 className="h-5 w-5" />
-            <span className="font-semibold">
-              {results.length} certificates generated and saved!
-            </span>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {results.map((r) => (
-              <div key={r.participantId} className="bg-card border border-border rounded-xl p-3">
-                <img
-                  src={r.fileUrl}
-                  alt={r.participantName}
-                  className="w-full rounded-lg border border-border mb-2"
-                />
-                <p className="text-sm font-medium truncate">{r.participantName}</p>
-                <a
-                  href={r.fileUrl}
-                  download={`${r.participantName}_certificate.png`}
-                  className="mt-2 flex items-center justify-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-muted/50 transition-colors"
-                >
-                  <Download className="h-3 w-3" /> Download
-                </a>
-              </div>
-            ))}
-          </div>
-          <button
-            onClick={() => {
-              setStep("gallery");
-              setResults([]);
-            }}
-            className="mt-6 flex items-center gap-2 text-sm text-primary hover:underline"
-          >
-            <RefreshCw className="h-3.5 w-3.5" /> Generate with a different template
-          </button>
-        </div>
+        <CertificateResultsScreen
+          results={results}
+          listName={listName}
+          onBack={() => { setStep("gallery"); setResults([]); }}
+        />
       ) : null}
     </div>
   );

@@ -315,6 +315,8 @@ const IdCardEditor = ({
   // Tracks only user-added decorative objects (never includes locked/dynamic ones)
   const userAddedRef   = useRef<any[]>([]);
   const [activeObj, setActiveObj]       = useState<any>(null);
+  const [activeObjColor, setActiveObjColor] = useState("#000000");
+  const [activeObjFontSize, setActiveObjFontSize] = useState(24);
   const [zoom, setZoom]                 = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress]         = useState({ done: 0, total: 0 });
@@ -349,9 +351,17 @@ const IdCardEditor = ({
           }
         });
 
-        canvas.on("selection:created", (e: any) => setActiveObj(e.selected?.[0] || null));
-        canvas.on("selection:updated", (e: any) => setActiveObj(e.selected?.[0] || null));
-        canvas.on("selection:cleared", ()        => setActiveObj(null));
+        const updateActiveObjState = (obj: any) => {
+          setActiveObj(obj || null);
+          if (obj) {
+            setActiveObjColor((obj.fill as string) || "#000000");
+            setActiveObjFontSize(obj.fontSize || 24);
+          }
+        };
+
+        canvas.on("selection:created", (e: any) => updateActiveObjState(e.selected?.[0]));
+        canvas.on("selection:updated", (e: any) => updateActiveObjState(e.selected?.[0]));
+        canvas.on("selection:cleared", () => { setActiveObj(null); });
         // Reset user-added objects tracking when canvas initialises
         userAddedRef.current = [];
         canvas.renderAll();
@@ -424,8 +434,20 @@ const IdCardEditor = ({
     const c = fabricRef.current; const o = c?.getActiveObject();
     if (c && o) { (c as any).sendObjectBackwards(o); c.renderAll(); }
   };
-  const handleColorChange    = (color: string) => { const o = fabricRef.current?.getActiveObject(); if (!o) return; o.set("fill", color); fabricRef.current?.renderAll(); };
-  const handleFontSizeChange = (size: number)  => { const o = fabricRef.current?.getActiveObject() as any; if (!o) return; o.set("fontSize", size); fabricRef.current?.renderAll(); };
+  const handleColorChange    = (color: string) => {
+    const o = fabricRef.current?.getActiveObject();
+    if (!o) return;
+    o.set("fill", color);
+    fabricRef.current?.renderAll();
+    setActiveObjColor(color);
+  };
+  const handleFontSizeChange = (size: number)  => {
+    const o = fabricRef.current?.getActiveObject() as any;
+    if (!o) return;
+    o.set("fontSize", size);
+    fabricRef.current?.renderAll();
+    setActiveObjFontSize(size);
+  };
   const handleBgColor        = (color: string) => { const c = fabricRef.current; if (!c) return; c.backgroundColor = color; c.renderAll(); };
 
   // ── Bulk generate ────────────────────────────────────────────────────────
@@ -611,14 +633,14 @@ const IdCardEditor = ({
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Selected Object</p>
                   <div className="flex items-center justify-between">
                     <label htmlFor="obj-color" className="text-sm">Color</label>
-                    <input id="obj-color" type="color" defaultValue="#000000"
+                    <input id="obj-color" type="color" value={activeObjColor}
                       onChange={e => handleColorChange(e.target.value)}
                       className="w-9 h-9 rounded-lg cursor-pointer border border-border" />
                   </div>
                   {activeObj.type === "textbox" && (
                     <div className="flex items-center justify-between">
                       <label htmlFor="font-size" className="text-sm">Font Size</label>
-                      <input id="font-size" type="number" defaultValue={activeObj.fontSize || 24} min={8} max={120}
+                      <input id="font-size" type="number" value={activeObjFontSize} min={8} max={120}
                         onChange={e => handleFontSizeChange(Number(e.target.value))}
                         className="w-20 px-2 py-1 rounded-lg border border-border bg-background text-sm text-center" />
                     </div>
